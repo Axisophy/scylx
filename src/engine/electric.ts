@@ -254,7 +254,7 @@ export function calculateElectricSystem(
     },
     batteryOnly: battery.rangeAtCruise * propulsion.cruiseSpeed,
     combined: {
-      tropical: (solar.dailyHarvest.tropical + battery.capacityKwh * 1000 * battery.type === 'lifepo4' ? BATTERY.lifepo4.dod : BATTERY.agm.dod) / energyAtCruise,
+      tropical: (solar.dailyHarvest.tropical + battery.capacityKwh * 1000 * (battery.type === 'lifepo4' ? BATTERY.lifepo4.dod : BATTERY.agm.dod)) / energyAtCruise,
       temperate: (solar.dailyHarvest.temperate + battery.capacityKwh * 1000 * 0.8) / energyAtCruise,
       nordic: (solar.dailyHarvest.nordic + battery.capacityKwh * 1000 * 0.8) / energyAtCruise,
     },

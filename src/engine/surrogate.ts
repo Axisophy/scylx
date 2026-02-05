@@ -22,8 +22,9 @@ let normStats: NormalizationStats | null = null;
 function encodeHullType(hullType: HullType): number {
   const encoding: Record<HullType, number> = {
     'flat-bottom': 0,
-    'single-chine': 0.5,
-    'multi-chine': 1,
+    'single-chine': 0.33,
+    'multi-chine': 0.67,
+    'round-bilge': 1,
   };
   return encoding[hullType];
 }
@@ -83,12 +84,29 @@ function generateTrainingData(): { inputs: number[][]; outputs: number[][] } {
                 depth,
                 hullType,
                 deadrise: 12, // Fixed for training simplicity
+                deadriseVariation: 'constant',
+                bowType: 'raked',
+                bowRake: 15,
+                bowFlare: 10,
+                sternType: 'transom',
+                transomRake: 12,
+                transomImmersion: 50,
+                prismaticCoefficient: 0.55,
+                lcb: 52,
+                rocker: 0.05,
+                chineHeight: 0.3,
+                chineAngle: 5,
                 crewWeight,
                 cargoWeight,
                 ballastType: 'none',
                 ballastWeight: 0,
                 ballastHeight: 0.1,
+                fuelCapacity: 50,
+                waterCapacity: 40,
                 engineHP,
+                engineType: 'outboard',
+                propellerDiameter: 12,
+                propellerPitch: 12,
               };
 
               inputs.push(encodeInputs(params));
