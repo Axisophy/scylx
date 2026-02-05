@@ -67,6 +67,16 @@ export interface SavedConfig {
   timestamp: number;
 }
 
+// Workspace view modes
+export type WorkspaceView =
+  | 'dashboard'     // Full dashboard with all panels
+  | 'hull-3d'       // Focused hull 3D view
+  | 'stability'     // Focused stability analysis
+  | 'design-space'  // Focused design space exploration
+  | 'performance'   // Speed/resistance curves
+  | 'build'         // Practical/structure/electric
+  | 'operations';   // Operations panel focused
+
 interface HullStore {
   // State
   params: HullParams;
@@ -91,6 +101,9 @@ interface HullStore {
   morphPosition: number; // 0 = configA, 1 = configB
   morphEnabled: boolean;
 
+  // Workspace view
+  workspace: WorkspaceView;
+
   // Actions
   setParam: <K extends keyof HullParams>(key: K, value: HullParams[K]) => void;
   setParams: (partial: Partial<HullParams>) => void;
@@ -103,6 +116,7 @@ interface HullStore {
   clearSavedConfigs: () => void;
   setMorphPosition: (position: number) => void;
   setMorphEnabled: (enabled: boolean) => void;
+  setWorkspace: (workspace: WorkspaceView) => void;
 }
 
 // Helper to interpolate between two hull param sets
@@ -169,6 +183,7 @@ export const useHullStore = create<HullStore>((set, get) => ({
   savedConfigB: null,
   morphPosition: 0,
   morphEnabled: false,
+  workspace: 'dashboard',
 
   // Update single parameter
   setParam: (key, value) => {
@@ -316,6 +331,9 @@ export const useHullStore = create<HullStore>((set, get) => ({
       });
     }
   },
+
+  // Set workspace view
+  setWorkspace: (workspace) => set({ workspace }),
 }));
 
 // Selector hooks for performance (prevent unnecessary re-renders)
@@ -342,5 +360,9 @@ export const useMorphEnabled = () => useHullStore((state) => state.morphEnabled)
 export const useSaveConfigA = () => useHullStore((state) => state.saveConfigA);
 export const useSaveConfigB = () => useHullStore((state) => state.saveConfigB);
 export const useClearSavedConfigs = () => useHullStore((state) => state.clearSavedConfigs);
+
+// Workspace selectors
+export const useWorkspace = () => useHullStore((state) => state.workspace);
+export const useSetWorkspace = () => useHullStore((state) => state.setWorkspace);
 export const useSetMorphPosition = () => useHullStore((state) => state.setMorphPosition);
 export const useSetMorphEnabled = () => useHullStore((state) => state.setMorphEnabled);

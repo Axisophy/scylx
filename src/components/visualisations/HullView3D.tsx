@@ -11,6 +11,7 @@ interface HullProps {
 }
 
 // Generate hull geometry from parameters using lofted sections
+// Coordinate system: x = length (bow to stern), y = up (deck to keel), z = beam (port/starboard)
 function generateHullGeometry(
   lwl: number,
   beam: number,
@@ -21,7 +22,7 @@ function generateHullGeometry(
   const geometry = new THREE.BufferGeometry();
 
   const numSections = 24;
-  const numPointsPerSide = 6;
+  const numPointsPerSide = 8;
 
   const positions: number[] = [];
   const indices: number[] = [];
@@ -36,86 +37,115 @@ function generateHullGeometry(
     const x = -halfLength + t * lwl;
 
     // Section shape varies along length
-    // Bow (t=0): narrow, stern (t=1): full width
-    // Use a smooth curve for the beam distribution
-    const bowCurve = Math.pow(Math.sin(t * Math.PI), 0.4);
-    const sternCurve = 0.3 + 0.7 * t; // Gradual widening
-    const sectionWidth = halfBeam * Math.min(bowCurve, sternCurve);
+    // Bow (t=0): narrow and pointed, stern (t=1): full width
+    const bowFactor = Math.pow(Math.sin(t * Math.PI * 0.5), 0.6); // Sharp at bow
+    const midFactor = Math.sin(t * Math.PI); // Full at midship
+    const sternFactor = 0.4 + 0.6 * t; // Gradual widening to stern
 
-    // Depth varies slightly (deeper at stern)
-    const sectionDepth = depth * (0.85 + 0.15 * t);
+    // Combine factors - narrow at bow, full amidships, slightly narrower at stern
+    let sectionWidthFactor: number;
+    if (t < 0.4) {
+      sectionWidthFactor = bowFactor;
+    } else if (t < 0.7) {
+      sectionWidthFactor = Math.max(midFactor, sternFactor);
+    } else {
+      sectionWidthFactor = 0.85 + 0.15 * Math.cos((t - 0.7) / 0.3 * Math.PI * 0.5);
+    }
 
-    // Generate points for this section (port side, then starboard)
+    const sectionWidth = halfBeam * sectionWidthFactor;
+
+    // Depth varies slightly (shallower at bow and stern)
+    const depthFactor = 0.7 + 0.3 * Math.sin(t * Math.PI);
+    const sectionDepth = depth * depthFactor;
+
+    // Generate points for this section (starboard side, from keel to gunwale)
+    // y = vertical (positive up), z = beam (positive starboard)
     const sectionPoints: [number, number, number][] = [];
 
     for (let j = 0; j <= numPointsPerSide; j++) {
-      const s = j / numPointsPerSide;
+      const s = j / numPointsPerSide; // 0 = keel, 1 = gunwale
 
-      let y: number, z: number;
+      let y: number; // vertical position (0 = waterline, negative = below)
+      let z: number; // beam position
 
       if (hullType === 'flat-bottom') {
-        // Flat bottom hull
         if (j === 0) {
-          // Keel
-          y = 0;
-          z = -sectionDepth;
+          // Keel centerline
+          y = -sectionDepth;
+          z = 0;
+        } else if (j <= 2) {
+          // Flat bottom section
+          const bottomT = j / 2;
+          y = -sectionDepth;
+          z = sectionWidth * 0.6 * bottomT;
         } else if (j === numPointsPerSide) {
           // Gunwale
-          y = sectionWidth;
-          z = 0;
+          y = 0;
+          z = sectionWidth;
         } else {
-          // Linear interpolation for sides
-          const blend = s;
-          y = sectionWidth * blend;
-          z = -sectionDepth * (1 - blend * blend);
+          // Sides - curve from bottom to gunwale
+          const sideT = (j - 2) / (numPointsPerSide - 2);
+          y = -sectionDepth * (1 - sideT);
+          z = sectionWidth * (0.6 + 0.4 * sideT);
         }
+      } else if (hullType === 'round-bilge') {
+        // Smooth round bilge hull
+        const angle = s * Math.PI * 0.5; // 0 to 90 degrees
+        y = -sectionDepth * Math.cos(angle);
+        z = sectionWidth * Math.sin(angle);
       } else {
-        // Vee or multi-chine hull
-        const keelDepth = sectionWidth * Math.tan(deadriseRad) * 0.5;
+        // Vee hull (single-chine or multi-chine)
+        const keelDrop = Math.tan(deadriseRad) * sectionWidth * 0.3;
 
         if (j === 0) {
-          // Keel
-          y = 0;
-          z = -sectionDepth - keelDepth * 0.3;
-        } else if (j === 1) {
-          // Bottom of vee
-          y = sectionWidth * 0.15;
-          z = -sectionDepth - keelDepth * 0.15;
-        } else if (j === 2) {
+          // Keel centerline
+          y = -sectionDepth - keelDrop;
+          z = 0;
+        } else if (j <= 2) {
+          // Vee bottom
+          const veeT = j / 2;
+          y = -sectionDepth - keelDrop * (1 - veeT);
+          z = sectionWidth * 0.4 * veeT;
+        } else if (j === 3) {
           // Chine
-          y = sectionWidth * 0.5;
-          z = -sectionDepth * 0.6;
+          y = -sectionDepth * 0.5;
+          z = sectionWidth * 0.6;
         } else if (j === numPointsPerSide) {
           // Gunwale
-          y = sectionWidth;
-          z = 0;
+          y = 0;
+          z = sectionWidth;
         } else {
-          // Smooth curve from chine to gunwale
-          const localT = (j - 2) / (numPointsPerSide - 2);
-          y = sectionWidth * (0.5 + 0.5 * localT);
-          z = -sectionDepth * 0.6 * (1 - localT);
+          // Topside - from chine to gunwale
+          const sideT = (j - 3) / (numPointsPerSide - 3);
+          y = -sectionDepth * 0.5 * (1 - sideT);
+          z = sectionWidth * (0.6 + 0.4 * sideT);
+
+          // Add some tumblehome for multi-chine
+          if (hullType === 'multi-chine' && sideT > 0.5) {
+            z -= sectionWidth * 0.05 * (sideT - 0.5);
+          }
         }
       }
 
-      // Store port side point
       sectionPoints.push([x, y, z]);
     }
 
-    // Add port side points
+    // Add starboard side points
     for (const pt of sectionPoints) {
       positions.push(pt[0], pt[1], pt[2]);
     }
 
-    // Add starboard side points (mirror)
-    for (let j = numPointsPerSide - 1; j >= 0; j--) {
+    // Add port side points (mirror across z=0, excluding keel which is shared)
+    for (let j = numPointsPerSide - 1; j >= 1; j--) {
       const pt = sectionPoints[j];
-      positions.push(pt[0], -pt[1], pt[2]);
+      positions.push(pt[0], pt[1], -pt[2]); // Mirror z
     }
   }
 
-  // Generate indices for triangles
-  const pointsPerSection = (numPointsPerSide + 1) * 2;
+  // Points per section: starboard (numPointsPerSide+1) + port (numPointsPerSide)
+  const pointsPerSection = numPointsPerSide * 2 + 1;
 
+  // Generate indices for triangles - connect adjacent sections
   for (let i = 0; i < numSections; i++) {
     for (let j = 0; j < pointsPerSection - 1; j++) {
       const a = i * pointsPerSection + j;
@@ -124,22 +154,18 @@ function generateHullGeometry(
       const d = c + 1;
 
       // Two triangles per quad
-      indices.push(a, c, b);
-      indices.push(b, c, d);
+      indices.push(a, b, c);
+      indices.push(b, d, c);
     }
-  }
 
-  // Cap the bow
-  const bowCenter = 0;
-  for (let j = 1; j < pointsPerSection - 1; j++) {
-    indices.push(bowCenter, j + 1, j);
-  }
+    // Close the loop (connect last point to first for this section ring)
+    const lastInSection = i * pointsPerSection + pointsPerSection - 1;
+    const firstInSection = i * pointsPerSection;
+    const lastNextSection = (i + 1) * pointsPerSection + pointsPerSection - 1;
+    const firstNextSection = (i + 1) * pointsPerSection;
 
-  // Cap the stern
-  const sternStart = numSections * pointsPerSection;
-  const sternCenter = sternStart;
-  for (let j = 1; j < pointsPerSection - 1; j++) {
-    indices.push(sternCenter, sternStart + j, sternStart + j + 1);
+    indices.push(lastInSection, firstInSection, lastNextSection);
+    indices.push(firstInSection, firstNextSection, lastNextSection);
   }
 
   geometry.setAttribute('position', new THREE.Float32BufferAttribute(positions, 3));
@@ -164,6 +190,10 @@ function Hull({ waveMode }: HullProps) {
     );
   }, [params.lwl, params.beam, params.depth, params.hullType, params.deadrise]);
 
+  // Clipping planes for waterline effect
+  const aboveWaterClip = useMemo(() => [new THREE.Plane(new THREE.Vector3(0, -1, 0), 0)], []);
+  const belowWaterClip = useMemo(() => [new THREE.Plane(new THREE.Vector3(0, 1, 0), 0)], []);
+
   // Wave response animation based on stability
   useFrame((state) => {
     if (meshRef.current) {
@@ -171,7 +201,6 @@ function Hull({ waveMode }: HullProps) {
 
       if (waveMode) {
         // Calculate roll period based on GM (stiffer = faster period)
-        // T_roll = 2π * sqrt(k² / (g * GM)) approximately
         const rollPeriod = Math.max(1.5, 4.0 - results.GM * 2);
         const pitchPeriod = Math.max(1.0, 3.0 - params.lwl * 0.2);
 
@@ -181,53 +210,61 @@ function Hull({ waveMode }: HullProps) {
         const pitchAmplitude = waveHeight * 0.5;
         const heaveAmplitude = waveHeight * 0.8;
 
-        // Apply motion with phase offsets
-        meshRef.current.rotation.z = Math.sin(time * (2 * Math.PI / rollPeriod)) * rollAmplitude;
-        meshRef.current.rotation.x = Math.sin(time * (2 * Math.PI / pitchPeriod) + 0.5) * pitchAmplitude;
+        // Apply motion with phase offsets (x = roll axis, z = pitch axis)
+        meshRef.current.rotation.x = Math.sin(time * (2 * Math.PI / rollPeriod)) * rollAmplitude;
+        meshRef.current.rotation.z = Math.sin(time * (2 * Math.PI / pitchPeriod) + 0.5) * pitchAmplitude;
         meshRef.current.position.y = Math.sin(time * (2 * Math.PI / pitchPeriod) + 1.0) * heaveAmplitude;
       } else {
         // Gentle bob animation
-        meshRef.current.rotation.z = Math.sin(time * 0.5) * 0.02;
-        meshRef.current.rotation.x = 0;
+        meshRef.current.rotation.x = Math.sin(time * 0.5) * 0.02;
+        meshRef.current.rotation.z = 0;
         meshRef.current.position.y = Math.sin(time * 0.7) * 0.01;
       }
     }
   });
 
-  const yOffset = results.draft - params.depth / 2;
+  // Hull sits with waterline at y=0, so draft pushes hull down
+  const hullOffset = results.draft;
 
   return (
     <group ref={meshRef}>
-      {/* Hull - above waterline */}
-      <mesh geometry={geometry} position={[0, yOffset, 0]}>
+      {/* Hull - above waterline (topsides - gray) */}
+      <mesh geometry={geometry} position={[0, hullOffset, 0]}>
         <meshStandardMaterial
           color="#4B5563"
           metalness={0.1}
           roughness={0.7}
           side={THREE.DoubleSide}
+          clippingPlanes={aboveWaterClip}
         />
       </mesh>
 
-      {/* Hull - below waterline (darker) */}
-      <mesh geometry={geometry} position={[0, yOffset, 0]}>
+      {/* Hull - below waterline (antifouling - dark blue) */}
+      <mesh geometry={geometry} position={[0, hullOffset, 0]}>
         <meshStandardMaterial
           color="#1E3A5F"
           metalness={0.15}
           roughness={0.5}
           side={THREE.DoubleSide}
-          clippingPlanes={[new THREE.Plane(new THREE.Vector3(0, 1, 0), 0)]}
+          clippingPlanes={belowWaterClip}
         />
       </mesh>
 
-      {/* Deck surface (simple plane) */}
-      <mesh position={[0, yOffset, 0]} rotation={[0, 0, 0]}>
-        <planeGeometry args={[params.lwl * 0.9, params.beam * 0.85]} />
+      {/* Deck surface - horizontal plane at deck level */}
+      <mesh position={[0, hullOffset, 0]} rotation={[-Math.PI / 2, 0, 0]}>
+        <planeGeometry args={[params.lwl * 0.85, params.beam * 0.8]} />
         <meshStandardMaterial
-          color="#D1D5DB"
+          color="#E5E7EB"
           metalness={0}
           roughness={0.9}
-          side={THREE.DoubleSide}
+          side={THREE.FrontSide}
         />
+      </mesh>
+
+      {/* Waterline marker */}
+      <mesh position={[0, 0.001, 0]} rotation={[-Math.PI / 2, 0, 0]}>
+        <ringGeometry args={[params.lwl * 0.48, params.lwl * 0.5, 64]} />
+        <meshBasicMaterial color="#0EA5E9" transparent opacity={0.3} />
       </mesh>
     </group>
   );
@@ -252,9 +289,9 @@ function Water({ waveMode }: WaterProps) {
         const y = positions.getY(i);
 
         // Simple wave pattern
-        const wave1 = Math.sin(x * 0.5 + time * 1.5) * 0.05;
-        const wave2 = Math.sin(y * 0.7 + time * 1.2) * 0.03;
-        const wave3 = Math.sin((x + y) * 0.3 + time * 0.8) * 0.02;
+        const wave1 = Math.sin(x * 0.5 + time * 1.5) * 0.04;
+        const wave2 = Math.sin(y * 0.7 + time * 1.2) * 0.025;
+        const wave3 = Math.sin((x + y) * 0.3 + time * 0.8) * 0.015;
 
         positions.setZ(i, wave1 + wave2 + wave3);
       }
@@ -264,15 +301,17 @@ function Water({ waveMode }: WaterProps) {
     }
   });
 
+  const waterSize = Math.max(params.lwl, params.beam) * 3;
+
   return (
-    <mesh ref={meshRef} position={[0, -0.01, 0]} rotation={[-Math.PI / 2, 0, 0]}>
-      <planeGeometry args={[params.lwl * 2.5, params.lwl * 2.5, 32, 32]} />
+    <mesh ref={meshRef} position={[0, -0.005, 0]} rotation={[-Math.PI / 2, 0, 0]}>
+      <planeGeometry args={[waterSize, waterSize, 48, 48]} />
       <meshStandardMaterial
         color="#0EA5E9"
         transparent
-        opacity={0.4}
-        metalness={0.1}
-        roughness={0.3}
+        opacity={0.5}
+        metalness={0.2}
+        roughness={0.2}
         side={THREE.DoubleSide}
       />
     </mesh>
@@ -288,8 +327,8 @@ export function HullView3D() {
     <div className="h-full w-full bg-gradient-to-b from-slate-50 to-slate-100 relative">
       <Canvas
         camera={{
-          position: [params.lwl * 0.7, params.depth * 3, params.lwl * 0.5],
-          fov: 40,
+          position: [params.lwl * 0.8, params.lwl * 0.4, params.lwl * 0.6],
+          fov: 35,
           near: 0.1,
           far: 100,
         }}
@@ -311,26 +350,26 @@ export function HullView3D() {
         <Hull waveMode={waveMode} />
         <Water waveMode={waveMode} />
 
-        {/* Shadows */}
+        {/* Shadows - below water level */}
         <ContactShadows
-          position={[0, -0.5, 0]}
-          opacity={0.3}
-          scale={20}
+          position={[0, -params.depth - 0.1, 0]}
+          opacity={0.2}
+          scale={15}
           blur={2}
           far={4}
         />
 
-        {/* Grid */}
+        {/* Grid - at keel level */}
         <Grid
-          position={[0, -0.5, 0]}
-          args={[20, 20]}
+          position={[0, -params.depth - 0.05, 0]}
+          args={[15, 15]}
           cellSize={0.5}
           cellThickness={0.5}
           cellColor="#94A3B8"
           sectionSize={2}
           sectionThickness={1}
           sectionColor="#64748B"
-          fadeDistance={15}
+          fadeDistance={12}
           fadeStrength={1}
         />
 

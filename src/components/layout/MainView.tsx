@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import dynamic from 'next/dynamic';
 import { StabilitySection } from '@/components/visualisations/StabilitySection';
+import { RightingCurve } from '@/components/visualisations/RightingCurve';
 import { DesignSpaceMap } from '@/components/visualisations/DesignSpaceMap';
 import { SpeedResistanceCurve } from '@/components/visualisations/SpeedResistanceCurve';
 import { ParetoFrontier } from '@/components/visualisations/ParetoFrontier';
@@ -13,6 +14,12 @@ import { PracticalAnalysis } from '@/components/visualisations/PracticalAnalysis
 import { StructureAnalysis } from '@/components/visualisations/StructureAnalysis';
 import { ElectricAnalysis } from '@/components/visualisations/ElectricAnalysis';
 import { OperationsPanel } from '@/components/layout/OperationsPanel';
+import { FuelRangeAnalysis } from '@/components/visualisations/FuelRangeAnalysis';
+import { VoyageCalculator } from '@/components/visualisations/VoyageCalculator';
+import { AnchorSizing } from '@/components/visualisations/AnchorSizing';
+import { WaterBallast } from '@/components/visualisations/WaterBallast';
+import { SafetyEquipment } from '@/components/visualisations/SafetyEquipment';
+import { useWorkspace } from '@/state/useHullStore';
 
 // Dynamically import 3D stability landscape to avoid SSR issues
 const StabilityLandscape = dynamic(
@@ -110,9 +117,140 @@ function TabbedPanel({ tabs, className = '', stagger = 0 }: TabbedPanelProps) {
   );
 }
 
+// Full-size panel wrapper for focused views
+function FocusedPanel({ title, children }: { title: string; children: React.ReactNode }) {
+  return (
+    <div className="flex-1 p-4 min-h-0">
+      <div className="h-full border border-muted-foreground/20 rounded bg-background overflow-hidden flex flex-col animate-slide-up">
+        <div className="px-3 py-2 border-b border-muted-foreground/20 bg-muted-foreground/5">
+          <h3 className="text-sm font-medium text-muted uppercase tracking-wider">{title}</h3>
+        </div>
+        <div className="flex-1 min-h-0 relative">{children}</div>
+      </div>
+    </div>
+  );
+}
+
+// Focused tabbed panel for full-size views
+function FocusedTabbedPanel({ tabs }: { tabs: { id: string; label: string; content: React.ReactNode }[] }) {
+  const [activeTab, setActiveTab] = useState(tabs[0]?.id || '');
+
+  return (
+    <div className="flex-1 p-4 min-h-0">
+      <div className="h-full border border-muted-foreground/20 rounded bg-background overflow-hidden flex flex-col animate-slide-up">
+        <div className="px-3 py-2 border-b border-muted-foreground/20 bg-muted-foreground/5 flex items-center gap-2">
+          {tabs.map((tab) => (
+            <button
+              key={tab.id}
+              onClick={() => setActiveTab(tab.id)}
+              className={`px-3 py-1 text-xs rounded transition-colors ${
+                activeTab === tab.id
+                  ? 'bg-foreground text-background'
+                  : 'text-muted-foreground hover:text-foreground'
+              }`}
+            >
+              {tab.label}
+            </button>
+          ))}
+        </div>
+        <div className="flex-1 min-h-0 relative">
+          {tabs.find((t) => t.id === activeTab)?.content}
+        </div>
+      </div>
+    </div>
+  );
+}
+
 export function MainView() {
   const [experimentalOpen, setExperimentalOpen] = useState(false);
+  const workspace = useWorkspace();
 
+  // Render focused views for non-dashboard workspaces
+  if (workspace === 'hull-3d') {
+    return (
+      <div className="flex-1 flex flex-col min-h-0 overflow-hidden">
+        <FocusedTabbedPanel
+          tabs={[
+            { id: 'hull', label: 'Hull 3D', content: <HullView3D /> },
+            { id: 'wake', label: 'Kelvin Wake', content: <KelvinWake /> },
+          ]}
+        />
+      </div>
+    );
+  }
+
+  if (workspace === 'stability') {
+    return (
+      <div className="flex-1 flex flex-col min-h-0 overflow-hidden">
+        <FocusedTabbedPanel
+          tabs={[
+            { id: 'section', label: 'Cross Section', content: <StabilitySection /> },
+            { id: 'righting', label: 'Righting Curve', content: <RightingCurve /> },
+            { id: 'landscape', label: '3D Landscape', content: <StabilityLandscape /> },
+          ]}
+        />
+      </div>
+    );
+  }
+
+  if (workspace === 'design-space') {
+    return (
+      <div className="flex-1 flex flex-col min-h-0 overflow-hidden">
+        <FocusedTabbedPanel
+          tabs={[
+            { id: 'space', label: 'Design Space', content: <DesignSpaceMap /> },
+            { id: 'pareto', label: 'Pareto Front', content: <ParetoFrontier /> },
+            { id: 'sensitivity', label: 'Sensitivity', content: <SensitivityChart /> },
+          ]}
+        />
+      </div>
+    );
+  }
+
+  if (workspace === 'performance') {
+    return (
+      <div className="flex-1 flex flex-col min-h-0 overflow-hidden">
+        <FocusedTabbedPanel
+          tabs={[
+            { id: 'speed', label: 'Speed Curve', content: <SpeedResistanceCurve /> },
+            { id: 'sensitivity', label: 'Sensitivity', content: <SensitivityChart /> },
+          ]}
+        />
+      </div>
+    );
+  }
+
+  if (workspace === 'build') {
+    return (
+      <div className="flex-1 flex flex-col min-h-0 overflow-hidden">
+        <FocusedTabbedPanel
+          tabs={[
+            { id: 'practical', label: 'Practical', content: <PracticalAnalysis /> },
+            { id: 'structure', label: 'Structure', content: <StructureAnalysis /> },
+            { id: 'electric', label: 'Electric', content: <ElectricAnalysis /> },
+          ]}
+        />
+      </div>
+    );
+  }
+
+  if (workspace === 'operations') {
+    return (
+      <div className="flex-1 flex flex-col min-h-0 overflow-hidden">
+        <FocusedTabbedPanel
+          tabs={[
+            { id: 'fuel', label: 'Fuel & Range', content: <FuelRangeAnalysis /> },
+            { id: 'voyage', label: 'Voyage', content: <VoyageCalculator /> },
+            { id: 'anchor', label: 'Anchor', content: <AnchorSizing /> },
+            { id: 'ballast', label: 'Water Ballast', content: <WaterBallast /> },
+            { id: 'safety', label: 'Safety', content: <SafetyEquipment /> },
+          ]}
+        />
+      </div>
+    );
+  }
+
+  // Default: Dashboard view with all panels
   return (
     <div className="flex-1 flex flex-col min-h-0 overflow-hidden">
       {/* Main Grid */}
