@@ -1,26 +1,211 @@
 @import "tailwindcss";
 
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  /* Core */
+  --background: #FAFAFA;
+  --foreground: #0A0A0A;
+  --muted: #71717A;
+  --muted-foreground: #A1A1AA;
+
+  /* Functional */
+  --safe: #2563EB;
+  --warning: #EA580C;
+  --danger: #DC2626;
+  --hull-below: #1E40AF;
+  --hull-above: #374151;
+  --waterline: #0EA5E9;
+
+  /* Accents */
+  --accent-primary: #2563EB;
+  --accent-secondary: #EA580C;
+
+  /* Spacing */
+  --panel-width: 280px;
+  --header-height: 48px;
+  --dashboard-height: 64px;
 }
 
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-safe: var(--safe);
+  --color-warning: var(--warning);
+  --color-danger: var(--danger);
+  --color-hull-below: var(--hull-below);
+  --color-hull-above: var(--hull-above);
+  --color-waterline: var(--waterline);
+  --color-accent-primary: var(--accent-primary);
+  --color-accent-secondary: var(--accent-secondary);
+
+  /* Typography - fallbacks until Adobe Fonts loaded */
+  --font-mono: 'JetBrains Mono', 'SF Mono', 'Menlo', monospace;
+  --font-ui: 'Helvetica Neue', 'Arial', sans-serif;
+  --font-body: 'Georgia', serif;
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+* {
+  box-sizing: border-box;
 }
 
 body {
   background: var(--background);
   color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  font-family: var(--font-ui);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* Utility classes for typography */
+.font-mono {
+  font-family: var(--font-mono);
+}
+
+.font-ui {
+  font-family: var(--font-ui);
+}
+
+.font-body {
+  font-family: var(--font-body);
+}
+
+/* Custom scrollbar for control panel */
+.custom-scrollbar::-webkit-scrollbar {
+  width: 6px;
+}
+
+.custom-scrollbar::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.custom-scrollbar::-webkit-scrollbar-thumb {
+  background: var(--muted-foreground);
+  border-radius: 3px;
+}
+
+.custom-scrollbar::-webkit-scrollbar-thumb:hover {
+  background: var(--muted);
+}
+
+/* Slider track styling */
+input[type="range"] {
+  -webkit-appearance: none;
+  appearance: none;
+  background: transparent;
+  cursor: pointer;
+}
+
+input[type="range"]::-webkit-slider-runnable-track {
+  height: 4px;
+  background: var(--muted-foreground);
+  border-radius: 2px;
+}
+
+input[type="range"]::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 14px;
+  height: 14px;
+  background: var(--foreground);
+  border-radius: 50%;
+  margin-top: -5px;
+  transition: transform 150ms ease;
+}
+
+input[type="range"]::-webkit-slider-thumb:hover {
+  transform: scale(1.15);
+}
+
+input[type="range"]::-moz-range-track {
+  height: 4px;
+  background: var(--muted-foreground);
+  border-radius: 2px;
+}
+
+input[type="range"]::-moz-range-thumb {
+  width: 14px;
+  height: 14px;
+  background: var(--foreground);
+  border-radius: 50%;
+  border: none;
+  transition: transform 150ms ease;
+}
+
+input[type="range"]::-moz-range-thumb:hover {
+  transform: scale(1.15);
+}
+
+/* Animations */
+@keyframes pulse-subtle {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.6; }
+}
+
+@keyframes fade-in {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes slide-in-right {
+  from { transform: translateX(100%); }
+  to { transform: translateX(0); }
+}
+
+@keyframes slide-up {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.animate-pulse-subtle {
+  animation: pulse-subtle 2s ease-in-out infinite;
+}
+
+.animate-fade-in {
+  animation: fade-in 300ms ease-out;
+}
+
+.animate-slide-up {
+  animation: slide-up 300ms ease-out;
+}
+
+/* Staggered animation delays */
+.stagger-1 { animation-delay: 50ms; }
+.stagger-2 { animation-delay: 100ms; }
+.stagger-3 { animation-delay: 150ms; }
+.stagger-4 { animation-delay: 200ms; }
+
+/* Focus states */
+button:focus-visible,
+input:focus-visible,
+select:focus-visible {
+  outline: 2px solid var(--accent-primary);
+  outline-offset: 2px;
+}
+
+/* Selection */
+::selection {
+  background: var(--accent-primary);
+  color: white;
+}
+
+/* Smooth transitions for interactive elements */
+button, a, input, select {
+  transition: all 150ms ease;
+}
+
+/* Panel hover effect */
+.panel-hover:hover {
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+}
+
+/* Number display tabular figures */
+.tabular-nums {
+  font-variant-numeric: tabular-nums;
 }
