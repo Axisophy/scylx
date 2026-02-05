@@ -12,6 +12,7 @@ import { MonteCarloSeakeeping } from '@/components/visualisations/MonteCarloSeak
 import { PracticalAnalysis } from '@/components/visualisations/PracticalAnalysis';
 import { StructureAnalysis } from '@/components/visualisations/StructureAnalysis';
 import { ElectricAnalysis } from '@/components/visualisations/ElectricAnalysis';
+import { OperationsPanel } from '@/components/layout/OperationsPanel';
 
 // Dynamically import 3D stability landscape to avoid SSR issues
 const StabilityLandscape = dynamic(
@@ -154,6 +155,9 @@ export function MainView() {
           stagger={4}
         />
       </main>
+
+      {/* Operations Panel */}
+      <OperationsPanel />
 
       {/* Experimental Section Toggle */}
       <button
