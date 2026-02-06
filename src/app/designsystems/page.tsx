@@ -46,7 +46,66 @@ function ComponentRow({
 }
 
 // ============================================================================
-// TEST COMPONENTS - Modify these to test styling changes
+// ICON COMPONENTS (from Header)
+// ============================================================================
+
+function GridIcon() {
+  return (
+    <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5" className="text-muted-foreground">
+      <rect x="1" y="1" width="6" height="6" rx="1" />
+      <rect x="9" y="1" width="6" height="6" rx="1" />
+      <rect x="1" y="9" width="6" height="6" rx="1" />
+      <rect x="9" y="9" width="6" height="6" rx="1" />
+    </svg>
+  );
+}
+
+function ChevronIcon({ open = false }: { open?: boolean }) {
+  return (
+    <svg
+      width="10"
+      height="10"
+      viewBox="0 0 16 16"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+      className={`text-muted-foreground transition-transform ${open ? 'rotate-180' : ''}`}
+    >
+      <path d="M4 6l4 4 4-4" />
+    </svg>
+  );
+}
+
+function ShareIcon() {
+  return (
+    <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5">
+      <path d="M4 8v5a1 1 0 001 1h6a1 1 0 001-1V8" />
+      <path d="M8 2v8" />
+      <path d="M5 5l3-3 3 3" />
+    </svg>
+  );
+}
+
+function HelpIcon() {
+  return (
+    <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5">
+      <circle cx="8" cy="8" r="6.5" />
+      <path d="M6 6.5a2 2 0 1 1 2.5 1.94V10" />
+      <circle cx="8" cy="12" r="0.5" fill="currentColor" />
+    </svg>
+  );
+}
+
+function CheckIcon() {
+  return (
+    <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="2" className="text-accent-primary">
+      <path d="M3 8l4 4 6-8" />
+    </svg>
+  );
+}
+
+// ============================================================================
+// TEST COMPONENTS
 // ============================================================================
 
 function TestSlider({ value, onChange }: { value: number; onChange: (v: number) => void }) {
@@ -60,15 +119,7 @@ function TestSlider({ value, onChange }: { value: number; onChange: (v: number) 
         step="0.1"
         value={value}
         onChange={(e) => onChange(parseFloat(e.target.value))}
-        className="flex-1 h-1.5 bg-muted-foreground/20 rounded-full appearance-none cursor-pointer
-          [&::-webkit-slider-thumb]:appearance-none
-          [&::-webkit-slider-thumb]:w-3
-          [&::-webkit-slider-thumb]:h-3
-          [&::-webkit-slider-thumb]:rounded-full
-          [&::-webkit-slider-thumb]:bg-foreground
-          [&::-webkit-slider-thumb]:cursor-pointer
-          [&::-webkit-slider-thumb]:transition-transform
-          [&::-webkit-slider-thumb]:hover:scale-125"
+        className="flex-1"
       />
       <span className="text-xs text-muted-foreground w-8">m</span>
     </div>
@@ -149,16 +200,6 @@ function TestSelect() {
   );
 }
 
-function TestInput() {
-  return (
-    <input
-      type="text"
-      placeholder="Enter value..."
-      className="w-full px-2 py-1.5 text-sm border border-muted-foreground/20 rounded bg-background focus:outline-none focus:ring-1 focus:ring-accent-primary"
-    />
-  );
-}
-
 function TestBadge({ variant }: { variant: 'default' | 'warning' | 'safe' | 'danger' }) {
   const styles = {
     default: 'px-1.5 py-0.5 text-[8px] bg-muted-foreground/20 text-muted-foreground rounded',
@@ -223,14 +264,309 @@ export default function DesignSystemsPage() {
           <h1 className="text-2xl font-medium mb-2">Design System Test Page</h1>
           <p className="text-muted-foreground">
             Test UI styling changes here. Left side shows live components, right side shows current Tailwind classes.
-            Changes here won't affect the main app until applied.
+            Changes here do not affect the main app until applied.
           </p>
         </div>
 
         {/* ================================================================ */}
-        {/* TYPOGRAPHY */}
+        {/* 1. PAGE / BODY */}
         {/* ================================================================ */}
-        <Section title="Typography">
+        <Section title="1. Page / Body">
+          <ComponentRow
+            name="Page Background"
+            styling={`// CSS Variable (globals.css)
+--background: #FAFAFA
+
+// Tailwind usage
+bg-background
+
+// Body styles (globals.css)
+body {
+  background: var(--background);
+  color: var(--foreground);
+  font-family: var(--font-ui);
+  -webkit-font-smoothing: antialiased;
+}`}
+          >
+            <div className="flex gap-4">
+              <div className="text-center">
+                <div className="w-24 h-16 bg-background border border-muted-foreground/20 rounded mb-2" />
+                <span className="text-[10px] font-mono">#FAFAFA</span>
+                <div className="text-[9px] text-muted-foreground">bg-background</div>
+              </div>
+              <div className="text-center">
+                <div className="w-24 h-16 bg-white border border-muted-foreground/20 rounded mb-2" />
+                <span className="text-[10px] font-mono">#FFFFFF</span>
+                <div className="text-[9px] text-muted-foreground">white (reference)</div>
+              </div>
+              <div className="text-center">
+                <div className="w-24 h-16 bg-zinc-100 border border-muted-foreground/20 rounded mb-2" />
+                <span className="text-[10px] font-mono">#F4F4F5</span>
+                <div className="text-[9px] text-muted-foreground">zinc-100</div>
+              </div>
+            </div>
+          </ComponentRow>
+
+          <ComponentRow
+            name="Panel Backgrounds"
+            styling={`// Panel header / muted areas
+bg-muted-foreground/5
+(~5% opacity of #A1A1AA)
+
+// Hover states
+hover:bg-muted-foreground/10
+hover:bg-muted-foreground/15
+
+// Active/selected backgrounds
+bg-muted-foreground/5 (selected item)
+bg-foreground text-background (active tab)`}
+          >
+            <div className="flex gap-4">
+              <div className="text-center">
+                <div className="w-24 h-16 bg-muted-foreground/5 border border-muted-foreground/20 rounded mb-2" />
+                <span className="text-[10px]">muted-fg/5</span>
+                <div className="text-[9px] text-muted-foreground">panel headers</div>
+              </div>
+              <div className="text-center">
+                <div className="w-24 h-16 bg-muted-foreground/10 border border-muted-foreground/20 rounded mb-2" />
+                <span className="text-[10px]">muted-fg/10</span>
+                <div className="text-[9px] text-muted-foreground">hover state</div>
+              </div>
+              <div className="text-center">
+                <div className="w-24 h-16 bg-muted-foreground/15 border border-muted-foreground/20 rounded mb-2" />
+                <span className="text-[10px]">muted-fg/15</span>
+                <div className="text-[9px] text-muted-foreground">active hover</div>
+              </div>
+            </div>
+          </ComponentRow>
+        </Section>
+
+        {/* ================================================================ */}
+        {/* 2. HEADER */}
+        {/* ================================================================ */}
+        <Section title="2. Header">
+          <ComponentRow
+            name="Full Header"
+            styling={`// Container
+h-12 (48px, --header-height)
+border-b border-muted-foreground/20
+flex items-center justify-between
+px-4 bg-background
+
+// Logo
+text-lg font-medium tracking-tight
+
+// Version
+text-xs text-muted-foreground font-mono
+
+// Divider
+border-l border-muted-foreground/20 ml-4 pl-4`}
+          >
+            <div className="border border-muted-foreground/20 rounded overflow-hidden">
+              <header className="h-12 border-b border-muted-foreground/20 flex items-center justify-between px-4 bg-background">
+                <div className="flex items-center gap-3">
+                  <h1 className="text-lg font-medium tracking-tight">SCYLX</h1>
+                  <span className="text-xs text-muted-foreground font-mono">v0.1</span>
+                  <div className="ml-4 border-l border-muted-foreground/20 pl-4">
+                    <button className="flex items-center gap-2 px-2.5 py-1.5 rounded bg-muted-foreground/10 hover:bg-muted-foreground/15 transition-colors">
+                      <GridIcon />
+                      <span className="text-xs font-medium">Dashboard</span>
+                      <ChevronIcon />
+                    </button>
+                  </div>
+                </div>
+                <div className="flex items-center gap-2">
+                  <button className="px-3 py-1.5 text-sm text-muted hover:text-foreground transition-colors rounded hover:bg-muted-foreground/10 flex items-center gap-1">
+                    <ShareIcon />
+                    Share
+                  </button>
+                  <button className="w-7 h-7 flex items-center justify-center text-muted hover:text-foreground transition-colors rounded hover:bg-muted-foreground/10">
+                    <HelpIcon />
+                  </button>
+                  <button className="px-3 py-1.5 text-sm text-muted hover:text-foreground transition-colors rounded hover:bg-muted-foreground/10">
+                    About
+                  </button>
+                </div>
+              </header>
+            </div>
+          </ComponentRow>
+
+          <ComponentRow
+            name="Header Icons"
+            styling={`// All icons: SVG with stroke
+width/height: 14-16px
+viewBox="0 0 16 16"
+fill="none"
+stroke="currentColor"
+strokeWidth="1.5" or "2"
+
+// Icon color
+className="text-muted-foreground"
+// or inherit from parent text color
+
+// Icon button container
+w-7 h-7 flex items-center justify-center
+text-muted hover:text-foreground
+rounded hover:bg-muted-foreground/10`}
+          >
+            <div className="flex gap-6 items-center">
+              <div className="text-center">
+                <div className="w-10 h-10 flex items-center justify-center border border-muted-foreground/20 rounded mb-2">
+                  <GridIcon />
+                </div>
+                <span className="text-[10px]">Grid (14px)</span>
+              </div>
+              <div className="text-center">
+                <div className="w-10 h-10 flex items-center justify-center border border-muted-foreground/20 rounded mb-2">
+                  <ChevronIcon />
+                </div>
+                <span className="text-[10px]">Chevron (10px)</span>
+              </div>
+              <div className="text-center">
+                <div className="w-10 h-10 flex items-center justify-center border border-muted-foreground/20 rounded mb-2">
+                  <ShareIcon />
+                </div>
+                <span className="text-[10px]">Share (14px)</span>
+              </div>
+              <div className="text-center">
+                <div className="w-10 h-10 flex items-center justify-center border border-muted-foreground/20 rounded mb-2">
+                  <HelpIcon />
+                </div>
+                <span className="text-[10px]">Help (16px)</span>
+              </div>
+              <div className="text-center">
+                <div className="w-10 h-10 flex items-center justify-center border border-muted-foreground/20 rounded mb-2">
+                  <CheckIcon />
+                </div>
+                <span className="text-[10px]">Check (14px)</span>
+              </div>
+            </div>
+          </ComponentRow>
+
+          <ComponentRow
+            name="Workspace Switcher"
+            styling={`// Button
+flex items-center gap-2
+px-2.5 py-1.5 rounded
+bg-muted-foreground/10
+hover:bg-muted-foreground/15
+
+// Label
+text-xs font-medium
+
+// Dropdown
+absolute top-full left-0 mt-1
+w-56 bg-background
+border border-muted-foreground/20
+rounded shadow-lg z-50 py-1
+
+// Dropdown item
+w-full px-3 py-2 text-left
+hover:bg-muted-foreground/10
+// Selected: bg-muted-foreground/5`}
+          >
+            <div className="space-y-4">
+              <button className="flex items-center gap-2 px-2.5 py-1.5 rounded bg-muted-foreground/10 hover:bg-muted-foreground/15 transition-colors">
+                <GridIcon />
+                <span className="text-xs font-medium">Dashboard</span>
+                <ChevronIcon />
+              </button>
+              <div className="w-56 bg-background border border-muted-foreground/20 rounded shadow-lg py-1">
+                <button className="w-full px-3 py-2 text-left hover:bg-muted-foreground/10 flex items-center justify-between bg-muted-foreground/5">
+                  <div>
+                    <div className="text-sm font-medium">Dashboard</div>
+                    <div className="text-[10px] text-muted-foreground">Full overview</div>
+                  </div>
+                  <CheckIcon />
+                </button>
+                <button className="w-full px-3 py-2 text-left hover:bg-muted-foreground/10 flex items-center justify-between">
+                  <div>
+                    <div className="text-sm font-medium">Hull 3D</div>
+                    <div className="text-[10px] text-muted-foreground">Focused 3D view</div>
+                  </div>
+                </button>
+              </div>
+            </div>
+          </ComponentRow>
+
+          <ComponentRow
+            name="Status Indicator (Header)"
+            styling={`// Container
+flex items-center gap-2 ml-4
+
+// Dot
+w-2 h-2 rounded-full
+bg-safe (ready)
+bg-accent-primary animate-pulse-subtle (training)
+
+// Label
+text-xs text-muted-foreground
+font-mono (for percentages)
+
+// Progress bar (training)
+w-16 h-1.5 bg-muted-foreground/20
+rounded-full overflow-hidden`}
+          >
+            <div className="space-y-4">
+              <div className="flex items-center gap-2">
+                <div className="w-2 h-2 rounded-full bg-safe" />
+                <span className="text-xs text-muted-foreground">Surrogate ready</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <div className="w-2 h-2 rounded-full bg-accent-primary animate-pulse" />
+                <span className="text-xs text-muted-foreground font-mono">Training... 65%</span>
+                <div className="w-16 h-1.5 bg-muted-foreground/20 rounded-full overflow-hidden">
+                  <div className="h-full bg-accent-primary rounded-full" style={{ width: '65%' }} />
+                </div>
+              </div>
+            </div>
+          </ComponentRow>
+        </Section>
+
+        {/* ================================================================ */}
+        {/* 3. TYPOGRAPHY */}
+        {/* ================================================================ */}
+        <Section title="3. Typography">
+          <ComponentRow
+            name="Font Stacks"
+            styling={`// CSS Variables (globals.css)
+
+--font-mono:
+  'JetBrains Mono',
+  'SF Mono',
+  'Menlo',
+  monospace
+
+--font-ui:
+  'Helvetica Neue',
+  'Arial',
+  sans-serif
+
+--font-body:
+  'Georgia',
+  serif
+
+// Note: Adobe Fonts to be added:
+// - Input Mono (mono)
+// - Neue Haas Grotesk Display (ui)
+// - Sabon (body)`}
+          >
+            <div className="space-y-4">
+              <div>
+                <div className="text-[10px] text-muted-foreground mb-1">--font-mono (numbers, code)</div>
+                <div className="font-mono text-lg">0123456789 ABCDEF</div>
+              </div>
+              <div>
+                <div className="text-[10px] text-muted-foreground mb-1">--font-ui (default, labels)</div>
+                <div className="font-ui text-lg">The quick brown fox</div>
+              </div>
+              <div>
+                <div className="text-[10px] text-muted-foreground mb-1">--font-body (serif, long text)</div>
+                <div className="font-body text-lg">The quick brown fox</div>
+              </div>
+            </div>
+          </ComponentRow>
+
           <ComponentRow
             name="Headings"
             styling={`// Page title
@@ -240,10 +576,12 @@ text-2xl font-medium
 text-lg font-medium
 
 // Panel title
-text-xs font-medium text-muted uppercase tracking-wider
+text-xs font-medium text-muted
+uppercase tracking-wider
 
 // Small label
-text-[10px] text-muted-foreground uppercase tracking-wider`}
+text-[10px] text-muted-foreground
+uppercase tracking-wider`}
           >
             <div className="space-y-3">
               <h1 className="text-2xl font-medium">Page Title (2xl)</h1>
@@ -264,22 +602,22 @@ text-sm text-muted-foreground
 // Mono/numeric
 text-sm font-mono
 
-// Large mono (metrics)
+// Large metric
 text-xl font-mono font-medium`}
           >
             <div className="space-y-2">
               <p className="text-sm">Normal body text (14px)</p>
               <p className="text-sm text-muted-foreground">Muted secondary text</p>
-              <p className="text-sm font-mono">Monospace for numbers: 123.45</p>
+              <p className="text-sm font-mono">Monospace: 123.45m</p>
               <p className="text-xl font-mono font-medium">6.3 <span className="text-sm text-muted-foreground">kn</span></p>
             </div>
           </ComponentRow>
         </Section>
 
         {/* ================================================================ */}
-        {/* COLORS */}
+        {/* 4. COLORS */}
         {/* ================================================================ */}
-        <Section title="Colors">
+        <Section title="4. Colors">
           <ComponentRow
             name="Core Colors"
             styling={`// CSS Variables (globals.css)
@@ -288,29 +626,33 @@ text-xl font-mono font-medium`}
 --muted: #71717A (zinc-500)
 --muted-foreground: #A1A1AA (zinc-400)
 
-// Usage
-bg-background
-text-foreground
+// Tailwind usage
+bg-background / text-background
+bg-foreground / text-foreground
 text-muted
 text-muted-foreground
 border-muted-foreground/20`}
           >
-            <div className="flex gap-4">
+            <div className="flex gap-4 flex-wrap">
               <div className="text-center">
                 <div className="w-16 h-16 bg-background border border-muted-foreground/20 rounded mb-1" />
-                <span className="text-[10px]">background</span>
+                <span className="text-[10px] font-mono">#FAFAFA</span>
+                <div className="text-[9px] text-muted-foreground">background</div>
               </div>
               <div className="text-center">
                 <div className="w-16 h-16 bg-foreground rounded mb-1" />
-                <span className="text-[10px]">foreground</span>
+                <span className="text-[10px] font-mono">#0A0A0A</span>
+                <div className="text-[9px] text-muted-foreground">foreground</div>
               </div>
               <div className="text-center">
                 <div className="w-16 h-16 bg-muted rounded mb-1" />
-                <span className="text-[10px]">muted</span>
+                <span className="text-[10px] font-mono">#71717A</span>
+                <div className="text-[9px] text-muted-foreground">muted</div>
               </div>
               <div className="text-center">
                 <div className="w-16 h-16 bg-muted-foreground rounded mb-1" />
-                <span className="text-[10px]">muted-fg</span>
+                <span className="text-[10px] font-mono">#A1A1AA</span>
+                <div className="text-[9px] text-muted-foreground">muted-fg</div>
               </div>
             </div>
           </ComponentRow>
@@ -322,46 +664,135 @@ border-muted-foreground/20`}
 --warning: #EA580C (orange-600)
 --danger: #DC2626 (red-600)
 --accent-primary: #2563EB (blue-600)
+--accent-secondary: #EA580C (orange-600)
 
-// Usage
-text-safe / bg-safe
-text-warning / bg-warning
-text-danger / bg-danger
-bg-accent-primary`}
+// Hull colors
+--hull-below: #1E40AF (blue-800)
+--hull-above: #374151 (gray-700)
+--waterline: #0EA5E9 (sky-500)`}
           >
-            <div className="flex gap-4">
+            <div className="flex gap-4 flex-wrap">
               <div className="text-center">
                 <div className="w-16 h-16 bg-safe rounded mb-1" />
-                <span className="text-[10px]">safe</span>
+                <span className="text-[10px] font-mono">#2563EB</span>
+                <div className="text-[9px] text-muted-foreground">safe</div>
               </div>
               <div className="text-center">
                 <div className="w-16 h-16 bg-warning rounded mb-1" />
-                <span className="text-[10px]">warning</span>
+                <span className="text-[10px] font-mono">#EA580C</span>
+                <div className="text-[9px] text-muted-foreground">warning</div>
               </div>
               <div className="text-center">
                 <div className="w-16 h-16 bg-danger rounded mb-1" />
-                <span className="text-[10px]">danger</span>
+                <span className="text-[10px] font-mono">#DC2626</span>
+                <div className="text-[9px] text-muted-foreground">danger</div>
               </div>
               <div className="text-center">
-                <div className="w-16 h-16 bg-accent-primary rounded mb-1" />
-                <span className="text-[10px]">accent</span>
+                <div className="w-16 h-16 bg-hull-below rounded mb-1" />
+                <span className="text-[10px] font-mono">#1E40AF</span>
+                <div className="text-[9px] text-muted-foreground">hull-below</div>
+              </div>
+              <div className="text-center">
+                <div className="w-16 h-16 bg-hull-above rounded mb-1" />
+                <span className="text-[10px] font-mono">#374151</span>
+                <div className="text-[9px] text-muted-foreground">hull-above</div>
+              </div>
+              <div className="text-center">
+                <div className="w-16 h-16 bg-waterline rounded mb-1" />
+                <span className="text-[10px] font-mono">#0EA5E9</span>
+                <div className="text-[9px] text-muted-foreground">waterline</div>
               </div>
             </div>
           </ComponentRow>
         </Section>
 
         {/* ================================================================ */}
-        {/* FORM CONTROLS */}
+        {/* 5. BORDERS & DIVIDERS */}
         {/* ================================================================ */}
-        <Section title="Form Controls">
+        <Section title="5. Borders & Dividers">
+          <ComponentRow
+            name="Border Opacities"
+            styling={`// Standard border (most common)
+border border-muted-foreground/20
+
+// Subtle border (inner dividers)
+border border-muted-foreground/10
+
+// Warning/accent border
+border border-warning/30
+
+// Border bottom only (dividers)
+border-b border-muted-foreground/20
+
+// Left border (vertical divider)
+border-l border-muted-foreground/20`}
+          >
+            <div className="space-y-4">
+              <div className="flex gap-4">
+                <div className="p-3 border border-muted-foreground/20 rounded flex-1">
+                  <span className="text-xs">20% opacity (standard)</span>
+                </div>
+                <div className="p-3 border border-muted-foreground/10 rounded flex-1">
+                  <span className="text-xs">10% opacity (subtle)</span>
+                </div>
+              </div>
+              <div className="p-3 border border-warning/30 bg-warning/5 rounded">
+                <span className="text-xs">warning/30 with warning/5 bg</span>
+              </div>
+              <div className="flex items-center gap-4">
+                <span className="text-xs">Left</span>
+                <div className="border-l border-muted-foreground/20 h-8" />
+                <span className="text-xs">Right</span>
+              </div>
+            </div>
+          </ComponentRow>
+
+          <ComponentRow
+            name="Border Radius"
+            styling={`// Standard radius
+rounded (4px, 0.25rem)
+
+// Full rounded (pills, dots)
+rounded-full
+
+// Specific corners
+rounded-t / rounded-b
+rounded-l / rounded-r`}
+          >
+            <div className="flex gap-4 items-center">
+              <div className="w-16 h-12 border border-muted-foreground/20 rounded flex items-center justify-center">
+                <span className="text-[10px]">rounded</span>
+              </div>
+              <div className="w-12 h-12 border border-muted-foreground/20 rounded-full flex items-center justify-center">
+                <span className="text-[10px]">full</span>
+              </div>
+              <div className="w-16 h-12 border border-muted-foreground/20 rounded-t flex items-center justify-center">
+                <span className="text-[10px]">top</span>
+              </div>
+            </div>
+          </ComponentRow>
+        </Section>
+
+        {/* ================================================================ */}
+        {/* 6. FORM CONTROLS */}
+        {/* ================================================================ */}
+        <Section title="6. Form Controls">
           <ComponentRow
             name="Slider"
-            styling={`// Track
-h-1.5 bg-muted-foreground/20 rounded-full
+            styling={`// Track (globals.css)
+height: 4px
+background: var(--muted-foreground)
+border-radius: 2px
 
-// Thumb (webkit)
-w-3 h-3 rounded-full bg-foreground
-hover:scale-125 transition-transform
+// Thumb
+width: 14px, height: 14px
+background: var(--foreground)
+border-radius: 50%
+margin-top: -5px
+
+// Hover
+transform: scale(1.15)
+transition: 150ms ease
 
 // Value label
 text-xs font-mono
@@ -375,8 +806,8 @@ text-xs text-muted-foreground`}
           <ComponentRow
             name="Select Dropdown"
             styling={`px-2 py-1.5 text-sm
-border border-muted-foreground/20 rounded
-bg-background
+border border-muted-foreground/20
+rounded bg-background
 focus:outline-none
 focus:ring-1 focus:ring-accent-primary`}
           >
@@ -384,20 +815,10 @@ focus:ring-1 focus:ring-accent-primary`}
           </ComponentRow>
 
           <ComponentRow
-            name="Text Input"
-            styling={`px-2 py-1.5 text-sm
-border border-muted-foreground/20 rounded
-bg-background
-focus:outline-none
-focus:ring-1 focus:ring-accent-primary`}
-          >
-            <TestInput />
-          </ComponentRow>
-
-          <ComponentRow
             name="Progress Bar"
             styling={`// Container
-w-full h-1.5 bg-muted-foreground/20
+w-full h-1.5
+bg-muted-foreground/20
 rounded-full overflow-hidden
 
 // Fill
@@ -420,24 +841,25 @@ rounded-full`}
         </Section>
 
         {/* ================================================================ */}
-        {/* BUTTONS */}
+        {/* 7. BUTTONS */}
         {/* ================================================================ */}
-        <Section title="Buttons">
+        <Section title="7. Buttons">
           <ComponentRow
             name="Button Variants"
-            styling={`// Primary
+            styling={`// Primary (solid)
 px-3 py-1.5 bg-foreground text-background
 rounded text-sm font-medium
 hover:bg-foreground/90 transition-colors
 
-// Secondary
-px-3 py-1.5 border border-muted-foreground/20
+// Secondary (outlined)
+px-3 py-1.5
+border border-muted-foreground/20
 rounded text-sm
-hover:bg-muted-foreground/10 transition-colors
+hover:bg-muted-foreground/10
 
-// Ghost
+// Ghost (text only)
 px-3 py-1.5 text-sm text-muted
-hover:text-foreground transition-colors
+hover:text-foreground
 rounded hover:bg-muted-foreground/10`}
           >
             <div className="flex gap-3">
@@ -449,9 +871,9 @@ rounded hover:bg-muted-foreground/10`}
         </Section>
 
         {/* ================================================================ */}
-        {/* PANELS */}
+        {/* 8. PANELS */}
         {/* ================================================================ */}
-        <Section title="Panels">
+        <Section title="8. Panels">
           <ComponentRow
             name="Basic Panel"
             styling={`// Container
@@ -459,7 +881,8 @@ border border-muted-foreground/20
 rounded bg-background overflow-hidden
 
 // Header
-px-3 py-1.5 border-b border-muted-foreground/20
+px-3 py-1.5
+border-b border-muted-foreground/20
 bg-muted-foreground/5
 
 // Title
@@ -467,15 +890,17 @@ text-xs font-medium text-muted
 uppercase tracking-wider`}
           >
             <TestPanel title="Panel Title">
-              <p className="text-sm text-muted-foreground">Panel content goes here</p>
+              <p className="text-sm text-muted-foreground">Panel content</p>
             </TestPanel>
           </ComponentRow>
 
           <ComponentRow
             name="Tabbed Panel"
             styling={`// Tab container
-px-2 py-1 border-b border-muted-foreground/20
-bg-muted-foreground/5 flex items-center gap-1
+px-2 py-1
+border-b border-muted-foreground/20
+bg-muted-foreground/5
+flex items-center gap-1
 
 // Active tab
 px-2 py-0.5 text-[10px] rounded
@@ -483,7 +908,8 @@ bg-foreground text-background
 
 // Inactive tab
 px-2 py-0.5 text-[10px] rounded
-text-muted-foreground hover:text-foreground`}
+text-muted-foreground
+hover:text-foreground`}
           >
             <TestTabbedPanel />
           </ComponentRow>
@@ -512,9 +938,9 @@ text-sm text-muted-foreground`}
         </Section>
 
         {/* ================================================================ */}
-        {/* BADGES & INDICATORS */}
+        {/* 9. BADGES & STATUS */}
         {/* ================================================================ */}
-        <Section title="Badges & Status">
+        <Section title="9. Badges & Status">
           <ComponentRow
             name="Badges"
             styling={`// Base
@@ -556,86 +982,78 @@ text-xs text-muted-foreground`}
         </Section>
 
         {/* ================================================================ */}
-        {/* BORDERS & SPACING */}
+        {/* 10. ANIMATIONS */}
         {/* ================================================================ */}
-        <Section title="Borders & Spacing">
+        <Section title="10. Animations">
           <ComponentRow
-            name="Border Styles"
-            styling={`// Standard border
-border border-muted-foreground/20
+            name="Transitions & Animations"
+            styling={`// Default transition (globals.css)
+button, a, input, select {
+  transition: all 150ms ease;
+}
 
-// Divider
-border-b border-muted-foreground/20
+// Custom animations
+animate-pulse-subtle (2s ease-in-out)
+animate-fade-in (300ms ease-out)
+animate-slide-up (300ms ease-out)
 
-// Subtle (10%)
-border border-muted-foreground/10
+// Stagger delays
+stagger-1: 50ms
+stagger-2: 100ms
+stagger-3: 150ms
+stagger-4: 200ms
 
-// Warning accent
-border border-warning/30`}
-          >
-            <div className="space-y-4">
-              <div className="p-3 border border-muted-foreground/20 rounded">
-                Standard (20% opacity)
-              </div>
-              <div className="p-3 border border-muted-foreground/10 rounded">
-                Subtle (10% opacity)
-              </div>
-              <div className="p-3 border border-warning/30 bg-warning/5 rounded">
-                Warning accent
-              </div>
-            </div>
-          </ComponentRow>
-
-          <ComponentRow
-            name="Common Spacing"
-            styling={`// Panel padding
-p-3 (12px) or p-4 (16px)
-
-// Header padding
-px-3 py-1.5
-
-// Grid gap
-gap-4 (16px)
-
-// Section margin
-mb-4 (16px)`}
-          >
-            <div className="space-y-2 text-sm text-muted-foreground">
-              <p>p-3 = 12px padding</p>
-              <p>p-4 = 16px padding</p>
-              <p>gap-4 = 16px grid gap</p>
-              <p>px-3 py-1.5 = 12px/6px header</p>
-            </div>
-          </ComponentRow>
-        </Section>
-
-        {/* ================================================================ */}
-        {/* ANIMATIONS */}
-        {/* ================================================================ */}
-        <Section title="Animations">
-          <ComponentRow
-            name="Transitions"
-            styling={`// Color transitions
-transition-colors (150ms default)
-
-// All properties
-transition-all
-
-// Transform
-transition-transform
-
-// Hover scale
-hover:scale-125
-
-// Pulse
-animate-pulse`}
+// Panel hover effect
+.panel-hover:hover {
+  box-shadow: 0 4px 12px rgba(0,0,0,0.08)
+}`}
           >
             <div className="flex gap-4 items-center">
               <button className="px-3 py-1.5 bg-muted-foreground/10 rounded transition-colors hover:bg-muted-foreground/20">
                 Hover me
               </button>
-              <div className="w-3 h-3 bg-safe rounded-full animate-pulse" />
-              <span className="text-xs text-muted-foreground">animate-pulse</span>
+              <div className="flex items-center gap-2">
+                <div className="w-3 h-3 bg-accent-primary rounded-full animate-pulse" />
+                <span className="text-xs text-muted-foreground">animate-pulse</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <div className="w-3 h-3 bg-safe rounded-full animate-pulse" style={{ animationDuration: '2s' }} />
+                <span className="text-xs text-muted-foreground">pulse-subtle</span>
+              </div>
+            </div>
+          </ComponentRow>
+        </Section>
+
+        {/* ================================================================ */}
+        {/* 11. SPACING REFERENCE */}
+        {/* ================================================================ */}
+        <Section title="11. Spacing Reference">
+          <ComponentRow
+            name="Common Spacing Values"
+            styling={`// Padding
+p-3 = 12px (panel content)
+p-4 = 16px (main grid gap)
+px-2 py-1 = 8px/4px (tab container)
+px-2.5 py-1.5 = 10px/6px (buttons)
+px-3 py-1.5 = 12px/6px (panel header)
+
+// Margins
+mb-1 = 4px
+mb-2 = 8px
+mb-4 = 16px
+ml-4 = 16px (after divider)
+
+// Gaps
+gap-1 = 4px (tabs)
+gap-2 = 8px (button groups)
+gap-3 = 12px (header items)
+gap-4 = 16px (grid)`}
+          >
+            <div className="space-y-2 text-sm text-muted-foreground">
+              <p>p-3 = 12px | p-4 = 16px</p>
+              <p>gap-1 = 4px | gap-2 = 8px | gap-4 = 16px</p>
+              <p>px-2 py-1 = 8px/4px (compact)</p>
+              <p>px-3 py-1.5 = 12px/6px (standard)</p>
             </div>
           </ComponentRow>
         </Section>
