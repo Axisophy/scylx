@@ -10,7 +10,10 @@ interface HullProps {
   waveMode: boolean;
 }
 
-// Generate hull geometry from parameters using lofted sections
+// Generate hull geometry using Three.js Y-up convention
+// X = length (bow at +X, stern at -X)
+// Y = vertical (up)
+// Z = beam (port at +Z, starboard at -Z)
 function generateHullGeometry(
   lwl: number,
   beam: number,
@@ -18,131 +21,150 @@ function generateHullGeometry(
   hullType: string,
   deadrise: number
 ): THREE.BufferGeometry {
-  const geometry = new THREE.BufferGeometry();
+  const halfLength = lwl / 2;
+  const halfBeam = beam / 2;
+  const deadriseRad = (deadrise * Math.PI) / 180;
 
-  const numSections = 24;
-  const numPointsPerSide = 6;
+  const lengthSegments = 20;
+  const profilePoints = 8; // Points per side of hull profile
 
   const positions: number[] = [];
   const indices: number[] = [];
 
-  const halfBeam = beam / 2;
-  const halfLength = lwl / 2;
-  const deadriseRad = (deadrise * Math.PI) / 180;
+  // Generate hull as a series of cross-sections from stern to bow
+  for (let i = 0; i <= lengthSegments; i++) {
+    const t = i / lengthSegments; // 0 = stern, 1 = bow
+    const x = -halfLength + t * lwl; // stern at -halfLength, bow at +halfLength
 
-  // Generate sections from bow to stern
-  for (let i = 0; i <= numSections; i++) {
-    const t = i / numSections;
-    const x = -halfLength + t * lwl;
+    // Width varies along length - narrow at bow, full amidships, slightly narrow at stern
+    let widthFactor: number;
+    if (t < 0.3) {
+      // Stern section - gradual taper
+      widthFactor = 0.7 + 0.3 * (t / 0.3);
+    } else if (t < 0.7) {
+      // Midship - full width
+      widthFactor = 1.0;
+    } else {
+      // Bow section - taper to point
+      widthFactor = 1.0 - 0.9 * Math.pow((t - 0.7) / 0.3, 1.5);
+    }
+    widthFactor = Math.max(0.05, widthFactor); // Minimum width at bow
 
-    // Section shape varies along length
-    // Bow (t=0): narrow, stern (t=1): full width
-    // Use a smooth curve for the beam distribution
-    const bowCurve = Math.pow(Math.sin(t * Math.PI), 0.4);
-    const sternCurve = 0.3 + 0.7 * t; // Gradual widening
-    const sectionWidth = halfBeam * Math.min(bowCurve, sternCurve);
+    const sectionHalfBeam = halfBeam * widthFactor;
+    const sectionDepth = depth * (t < 0.8 ? 1.0 : 1.0 - 0.3 * ((t - 0.8) / 0.2));
 
-    // Depth varies slightly (deeper at stern)
-    const sectionDepth = depth * (0.85 + 0.15 * t);
+    // Generate profile points for this section (from keel up port side, then down starboard)
+    // We go: keel -> port chine -> port gunwale -> starboard gunwale -> starboard chine -> back to keel
 
-    // Generate points for this section (port side, then starboard)
-    const sectionPoints: [number, number, number][] = [];
-
-    for (let j = 0; j <= numPointsPerSide; j++) {
-      const s = j / numPointsPerSide;
-
+    for (let j = 0; j <= profilePoints * 2; j++) {
       let y: number, z: number;
 
-      if (hullType === 'flat-bottom') {
-        // Flat bottom hull
-        if (j === 0) {
-          // Keel
-          y = 0;
-          z = -sectionDepth;
-        } else if (j === numPointsPerSide) {
-          // Gunwale
-          y = sectionWidth;
-          z = 0;
+      if (j <= profilePoints) {
+        // Port side: j=0 is keel, j=profilePoints is port gunwale
+        const s = j / profilePoints;
+
+        if (hullType === 'flat-bottom') {
+          // Flat bottom with curved sides
+          if (s < 0.3) {
+            // Bottom section (flat)
+            z = sectionHalfBeam * (s / 0.3) * 0.6;
+            y = -sectionDepth;
+          } else {
+            // Side section (curves up)
+            const sideT = (s - 0.3) / 0.7;
+            z = sectionHalfBeam * (0.6 + 0.4 * sideT);
+            y = -sectionDepth * (1 - sideT);
+          }
         } else {
-          // Linear interpolation for sides
-          const blend = s;
-          y = sectionWidth * blend;
-          z = -sectionDepth * (1 - blend * blend);
+          // Vee hull
+          const veeDepth = Math.tan(deadriseRad) * sectionHalfBeam * 0.3;
+          if (s < 0.4) {
+            // Bottom vee section
+            const veeT = s / 0.4;
+            z = sectionHalfBeam * 0.5 * veeT;
+            y = -sectionDepth - veeDepth * (1 - veeT);
+          } else {
+            // Side section
+            const sideT = (s - 0.4) / 0.6;
+            z = sectionHalfBeam * (0.5 + 0.5 * sideT);
+            y = -sectionDepth * (1 - sideT * 0.95);
+          }
         }
       } else {
-        // Vee or multi-chine hull
-        const keelDepth = sectionWidth * Math.tan(deadriseRad) * 0.5;
+        // Starboard side: mirror of port
+        const mirrorJ = profilePoints * 2 - j;
+        const s = mirrorJ / profilePoints;
 
-        if (j === 0) {
-          // Keel
-          y = 0;
-          z = -sectionDepth - keelDepth * 0.3;
-        } else if (j === 1) {
-          // Bottom of vee
-          y = sectionWidth * 0.15;
-          z = -sectionDepth - keelDepth * 0.15;
-        } else if (j === 2) {
-          // Chine
-          y = sectionWidth * 0.5;
-          z = -sectionDepth * 0.6;
-        } else if (j === numPointsPerSide) {
-          // Gunwale
-          y = sectionWidth;
-          z = 0;
+        if (hullType === 'flat-bottom') {
+          if (s < 0.3) {
+            z = -sectionHalfBeam * (s / 0.3) * 0.6;
+            y = -sectionDepth;
+          } else {
+            const sideT = (s - 0.3) / 0.7;
+            z = -sectionHalfBeam * (0.6 + 0.4 * sideT);
+            y = -sectionDepth * (1 - sideT);
+          }
         } else {
-          // Smooth curve from chine to gunwale
-          const localT = (j - 2) / (numPointsPerSide - 2);
-          y = sectionWidth * (0.5 + 0.5 * localT);
-          z = -sectionDepth * 0.6 * (1 - localT);
+          const veeDepth = Math.tan(deadriseRad) * sectionHalfBeam * 0.3;
+          if (s < 0.4) {
+            const veeT = s / 0.4;
+            z = -sectionHalfBeam * 0.5 * veeT;
+            y = -sectionDepth - veeDepth * (1 - veeT);
+          } else {
+            const sideT = (s - 0.4) / 0.6;
+            z = -sectionHalfBeam * (0.5 + 0.5 * sideT);
+            y = -sectionDepth * (1 - sideT * 0.95);
+          }
         }
       }
 
-      // Store port side point: [x=length, y=beam, z=depth]
-      sectionPoints.push([x, y, z]);
-    }
-
-    // Add port side points - swap Y/Z for Three.js Y-up convention
-    // Three.js: X=length, Y=vertical(depth), Z=horizontal(beam)
-    for (const pt of sectionPoints) {
-      positions.push(pt[0], pt[2], pt[1]);  // x, z, y -> x, y, z in Three.js
-    }
-
-    // Add starboard side points (mirror across beam axis)
-    for (let j = numPointsPerSide - 1; j >= 0; j--) {
-      const pt = sectionPoints[j];
-      positions.push(pt[0], pt[2], -pt[1]);  // x, z, -y for starboard
+      positions.push(x, y, z);
     }
   }
 
-  // Generate indices for triangles
-  const pointsPerSection = (numPointsPerSide + 1) * 2;
+  // Generate indices - connect adjacent sections
+  const pointsPerSection = profilePoints * 2 + 1;
 
-  for (let i = 0; i < numSections; i++) {
+  for (let i = 0; i < lengthSegments; i++) {
     for (let j = 0; j < pointsPerSection - 1; j++) {
       const a = i * pointsPerSection + j;
       const b = a + 1;
-      const c = a + pointsPerSection;
+      const c = (i + 1) * pointsPerSection + j;
       const d = c + 1;
 
       // Two triangles per quad
-      indices.push(a, c, b);
-      indices.push(b, c, d);
+      indices.push(a, b, c);
+      indices.push(b, d, c);
     }
+
+    // Close the loop (connect last point to first)
+    const a = i * pointsPerSection + (pointsPerSection - 1);
+    const b = i * pointsPerSection;
+    const c = (i + 1) * pointsPerSection + (pointsPerSection - 1);
+    const d = (i + 1) * pointsPerSection;
+
+    indices.push(a, b, c);
+    indices.push(b, d, c);
   }
 
-  // Cap the bow
-  const bowCenter = 0;
-  for (let j = 1; j < pointsPerSection - 1; j++) {
-    indices.push(bowCenter, j + 1, j);
+  // Cap the stern (i=0)
+  const sternCenterIdx = positions.length / 3;
+  positions.push(-halfLength, -depth * 0.5, 0); // Stern center point
+  for (let j = 0; j < pointsPerSection - 1; j++) {
+    indices.push(sternCenterIdx, j + 1, j);
   }
+  indices.push(sternCenterIdx, 0, pointsPerSection - 1);
 
-  // Cap the stern
-  const sternStart = numSections * pointsPerSection;
-  const sternCenter = sternStart;
-  for (let j = 1; j < pointsPerSection - 1; j++) {
-    indices.push(sternCenter, sternStart + j, sternStart + j + 1);
+  // Cap the bow (i=lengthSegments)
+  const bowStart = lengthSegments * pointsPerSection;
+  const bowCenterIdx = positions.length / 3;
+  positions.push(halfLength, -depth * 0.3, 0); // Bow center point (higher, pointed)
+  for (let j = 0; j < pointsPerSection - 1; j++) {
+    indices.push(bowCenterIdx, bowStart + j, bowStart + j + 1);
   }
+  indices.push(bowCenterIdx, bowStart + pointsPerSection - 1, bowStart);
 
+  const geometry = new THREE.BufferGeometry();
   geometry.setAttribute('position', new THREE.Float32BufferAttribute(positions, 3));
   geometry.setIndex(indices);
   geometry.computeVertexNormals();
@@ -154,6 +176,20 @@ function Hull({ waveMode }: HullProps) {
   const meshRef = useRef<THREE.Group>(null);
   const params = useHullStore((state) => state.params);
   const results = useHullStore((state) => state.results);
+
+  const geometry = useMemo(() => {
+    return generateHullGeometry(
+      params.lwl,
+      params.beam,
+      params.depth,
+      params.hullType,
+      params.deadrise
+    );
+  }, [params.lwl, params.beam, params.depth, params.hullType, params.deadrise]);
+
+  // Clipping planes for waterline coloring
+  const aboveWaterClip = useMemo(() => [new THREE.Plane(new THREE.Vector3(0, -1, 0), 0)], []);
+  const belowWaterClip = useMemo(() => [new THREE.Plane(new THREE.Vector3(0, 1, 0), 0)], []);
 
   // Wave response animation based on stability
   useFrame((state) => {
@@ -180,43 +216,38 @@ function Hull({ waveMode }: HullProps) {
     }
   });
 
-  // Simple boat hull using a stretched/tapered box approach
-  // Using primitive geometries that are guaranteed to render
   const draft = results.draft || 0.25;
-  const freeboard = params.depth - draft;
+  const yOffset = draft; // Raise hull so waterline (y=0) is at draft level
 
   return (
     <group ref={meshRef}>
-      {/* Main hull body - a box tapered at the ends would be ideal,
-          but let's use a simple elongated box first to verify rendering */}
-      <mesh position={[0, -draft / 2, 0]}>
-        <boxGeometry args={[params.lwl, draft, params.beam * 0.8]} />
-        <meshStandardMaterial
-          color="#991B1B"
-          metalness={0.1}
-          roughness={0.5}
-        />
-      </mesh>
-
-      {/* Topsides */}
-      <mesh position={[0, freeboard / 2, 0]}>
-        <boxGeometry args={[params.lwl * 0.95, freeboard, params.beam * 0.85]} />
+      {/* Hull - above waterline (topsides - gray) */}
+      <mesh geometry={geometry} position={[0, yOffset, 0]}>
         <meshStandardMaterial
           color="#52525B"
           metalness={0.1}
           roughness={0.6}
+          side={THREE.DoubleSide}
+          clippingPlanes={aboveWaterClip}
+          clipShadows
         />
       </mesh>
 
-      {/* Bow taper - a wedge shape */}
-      <mesh position={[params.lwl * 0.45, 0, 0]} rotation={[0, 0, 0]}>
-        <coneGeometry args={[params.beam * 0.4, params.lwl * 0.15, 4]} />
-        <meshStandardMaterial color="#52525B" />
+      {/* Hull - below waterline (antifouling red) */}
+      <mesh geometry={geometry} position={[0, yOffset, 0]}>
+        <meshStandardMaterial
+          color="#991B1B"
+          metalness={0.1}
+          roughness={0.5}
+          side={THREE.DoubleSide}
+          clippingPlanes={belowWaterClip}
+          clipShadows
+        />
       </mesh>
 
       {/* Deck surface */}
-      <mesh position={[0, freeboard + 0.01, 0]} rotation={[-Math.PI / 2, 0, 0]}>
-        <planeGeometry args={[params.lwl * 0.9, params.beam * 0.8]} />
+      <mesh position={[0, yOffset + 0.01, 0]} rotation={[-Math.PI / 2, 0, 0]}>
+        <planeGeometry args={[params.lwl * 0.85, params.beam * 0.75]} />
         <meshStandardMaterial
           color="#E4E4E7"
           metalness={0}
