@@ -169,15 +169,6 @@ function generateHullGeometry(
   geometry.setIndex(indices);
   geometry.computeVertexNormals();
 
-  // Flip normals to point outward
-  const normals = geometry.attributes.normal;
-  for (let i = 0; i < normals.count; i++) {
-    normals.setX(i, -normals.getX(i));
-    normals.setY(i, -normals.getY(i));
-    normals.setZ(i, -normals.getZ(i));
-  }
-  normals.needsUpdate = true;
-
   return geometry;
 }
 
@@ -226,10 +217,37 @@ function Hull({ waveMode }: HullProps) {
 
   return (
     <group ref={meshRef}>
-      {/* Simple test box to verify rendering */}
-      <mesh position={[0, 0, 0]}>
-        <boxGeometry args={[params.lwl, params.depth, params.beam]} />
-        <meshBasicMaterial color="#EA580C" />
+      {/* Hull - above waterline (topsides - gray) */}
+      <mesh geometry={geometry} position={[0, yOffset, 0]}>
+        <meshStandardMaterial
+          color="#52525B"
+          metalness={0.1}
+          roughness={0.6}
+          side={THREE.DoubleSide}
+          clippingPlanes={[new THREE.Plane(new THREE.Vector3(0, -1, 0), 0)]}
+        />
+      </mesh>
+
+      {/* Hull - below waterline (antifouling red) */}
+      <mesh geometry={geometry} position={[0, yOffset, 0]}>
+        <meshStandardMaterial
+          color="#991B1B"
+          metalness={0.1}
+          roughness={0.5}
+          side={THREE.DoubleSide}
+          clippingPlanes={[new THREE.Plane(new THREE.Vector3(0, 1, 0), 0)]}
+        />
+      </mesh>
+
+      {/* Deck surface */}
+      <mesh position={[0, yOffset + 0.01, 0]} rotation={[-Math.PI / 2, 0, 0]}>
+        <planeGeometry args={[params.lwl * 0.85, params.beam * 0.75]} />
+        <meshStandardMaterial
+          color="#E4E4E7"
+          metalness={0}
+          roughness={0.9}
+          side={THREE.DoubleSide}
+        />
       </mesh>
     </group>
   );
