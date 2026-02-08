@@ -169,6 +169,15 @@ function generateHullGeometry(
   geometry.setIndex(indices);
   geometry.computeVertexNormals();
 
+  // Flip normals to point outward
+  const normals = geometry.attributes.normal;
+  for (let i = 0; i < normals.count; i++) {
+    normals.setX(i, -normals.getX(i));
+    normals.setY(i, -normals.getY(i));
+    normals.setZ(i, -normals.getZ(i));
+  }
+  normals.needsUpdate = true;
+
   return geometry;
 }
 
