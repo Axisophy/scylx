@@ -132,9 +132,9 @@ function generateHullGeometry(
       const c = (i + 1) * pointsPerSection + j;
       const d = c + 1;
 
-      // Two triangles per quad
-      indices.push(a, b, c);
-      indices.push(b, d, c);
+      // Two triangles per quad - reversed winding for outward-facing normals
+      indices.push(a, c, b);
+      indices.push(b, c, d);
     }
 
     // Close the loop (connect last point to first)
@@ -143,26 +143,26 @@ function generateHullGeometry(
     const c = (i + 1) * pointsPerSection + (pointsPerSection - 1);
     const d = (i + 1) * pointsPerSection;
 
-    indices.push(a, b, c);
-    indices.push(b, d, c);
+    indices.push(a, c, b);
+    indices.push(b, c, d);
   }
 
   // Cap the stern (i=0)
   const sternCenterIdx = positions.length / 3;
   positions.push(-halfLength, -depth * 0.5, 0); // Stern center point
   for (let j = 0; j < pointsPerSection - 1; j++) {
-    indices.push(sternCenterIdx, j + 1, j);
+    indices.push(sternCenterIdx, j, j + 1);
   }
-  indices.push(sternCenterIdx, 0, pointsPerSection - 1);
+  indices.push(sternCenterIdx, pointsPerSection - 1, 0);
 
   // Cap the bow (i=lengthSegments)
   const bowStart = lengthSegments * pointsPerSection;
   const bowCenterIdx = positions.length / 3;
   positions.push(halfLength, -depth * 0.3, 0); // Bow center point (higher, pointed)
   for (let j = 0; j < pointsPerSection - 1; j++) {
-    indices.push(bowCenterIdx, bowStart + j, bowStart + j + 1);
+    indices.push(bowCenterIdx, bowStart + j + 1, bowStart + j);
   }
-  indices.push(bowCenterIdx, bowStart + pointsPerSection - 1, bowStart);
+  indices.push(bowCenterIdx, bowStart, bowStart + pointsPerSection - 1);
 
   const geometry = new THREE.BufferGeometry();
   geometry.setAttribute('position', new THREE.Float32BufferAttribute(positions, 3));
