@@ -39,10 +39,10 @@
   --color-accent-primary: var(--accent-primary);
   --color-accent-secondary: var(--accent-secondary);
 
-  /* Typography - fallbacks until Adobe Fonts loaded */
-  --font-mono: 'JetBrains Mono', 'SF Mono', 'Menlo', monospace;
-  --font-ui: 'Helvetica Neue', 'Arial', sans-serif;
-  --font-body: 'Georgia', serif;
+  /* Typography - Adobe Fonts (Typekit) */
+  --font-mono: 'input-mono', 'SF Mono', 'Menlo', monospace;
+  --font-ui: 'neue-haas-grotesk-text', 'Helvetica Neue', 'Arial', sans-serif;
+  --font-body: 'linotype-sabon', 'Georgia', serif;
 }
 
 * {

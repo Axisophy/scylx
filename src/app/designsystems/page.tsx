@@ -596,26 +596,24 @@ rounded-full overflow-hidden`}
           <ComponentRow
             name="Font Stacks"
             styling={`// CSS Variables (globals.css)
+// Adobe Fonts (Typekit)
 
 --font-mono:
-  'JetBrains Mono',
+  'input-mono',
   'SF Mono',
   'Menlo',
   monospace
 
 --font-ui:
+  'neue-haas-grotesk-text',
   'Helvetica Neue',
   'Arial',
   sans-serif
 
 --font-body:
+  'linotype-sabon',
   'Georgia',
-  serif
-
-// Note: Adobe Fonts to be added:
-// - Input Mono (mono)
-// - Neue Haas Grotesk Display (ui)
-// - Sabon (body)`}
+  serif`}
           >
             <div className="space-y-4">
               <div>
