@@ -226,23 +226,10 @@ function Hull({ waveMode }: HullProps) {
 
   return (
     <group ref={meshRef}>
-      {/* Hull - using basic material to ignore lighting */}
-      <mesh geometry={geometry} position={[0, yOffset, 0]}>
-        <meshBasicMaterial
-          color="#EA580C"
-          side={THREE.DoubleSide}
-        />
-      </mesh>
-
-      {/* Deck surface */}
-      <mesh position={[0, yOffset + 0.01, 0]} rotation={[-Math.PI / 2, 0, 0]}>
-        <planeGeometry args={[params.lwl * 0.85, params.beam * 0.75]} />
-        <meshStandardMaterial
-          color="#E4E4E7"
-          metalness={0}
-          roughness={0.9}
-          side={THREE.DoubleSide}
-        />
+      {/* Simple test box to verify rendering */}
+      <mesh position={[0, 0, 0]}>
+        <boxGeometry args={[params.lwl, params.depth, params.beam]} />
+        <meshBasicMaterial color="#EA580C" />
       </mesh>
     </group>
   );
