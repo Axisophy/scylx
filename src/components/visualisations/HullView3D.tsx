@@ -296,8 +296,8 @@ export function HullView3D() {
     <div className="h-full w-full bg-gradient-to-b from-slate-50 to-slate-100 relative">
       <Canvas
         camera={{
-          position: [params.lwl * 0.7, params.depth * 3, params.lwl * 0.5],
-          fov: 40,
+          position: [params.lwl * 1.2, params.lwl * 0.4, params.lwl * 0.8],
+          fov: 35,
           near: 0.1,
           far: 100,
         }}
@@ -346,8 +346,9 @@ export function HullView3D() {
           enablePan={false}
           minDistance={3}
           maxDistance={20}
-          minPolarAngle={Math.PI * 0.1}
-          maxPolarAngle={Math.PI * 0.45}
+          minPolarAngle={Math.PI * 0.15}
+          maxPolarAngle={Math.PI * 0.48}
+          target={[0, 0, 0]}
           autoRotate={!waveMode}
           autoRotateSpeed={0.3}
         />
