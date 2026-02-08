@@ -226,12 +226,10 @@ function Hull({ waveMode }: HullProps) {
 
   return (
     <group ref={meshRef}>
-      {/* Hull - single color to verify shape */}
+      {/* Hull - using basic material to ignore lighting */}
       <mesh geometry={geometry} position={[0, yOffset, 0]}>
-        <meshStandardMaterial
+        <meshBasicMaterial
           color="#EA580C"
-          metalness={0.1}
-          roughness={0.5}
           side={THREE.DoubleSide}
         />
       </mesh>
