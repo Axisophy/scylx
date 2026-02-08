@@ -3,6 +3,7 @@
 import { useState, useMemo } from 'react';
 import { useHullStore } from '@/state/useHullStore';
 import { calculateFuelAnalysis, calculateVoyage, type SeaCondition } from '@/engine/operations';
+import { InfoTooltip } from '@/components/ui/InfoTooltip';
 
 function formatTime(hours: number): string {
   const h = Math.floor(hours);
@@ -38,7 +39,23 @@ export function VoyageCalculator() {
   const fuelPercentage = Math.min(100, (voyage.fuelWithReserve / params.fuelCapacity) * 100);
 
   return (
-    <div className="h-full flex flex-col p-3 overflow-y-auto custom-scrollbar">
+    <div className="h-full flex flex-col p-3 overflow-y-auto custom-scrollbar relative">
+      <div className="absolute top-2 right-2 z-10">
+        <InfoTooltip title="Voyage Calculator">
+          <p>
+            Plan a specific passage and check if you have enough fuel with a <strong>20% safety reserve</strong>.
+          </p>
+          <p>
+            <strong>Sea conditions:</strong> Moderate seas add ~15% to fuel consumption, rough seas ~35%, due to increased resistance and reduced speed made good.
+          </p>
+          <p>
+            <strong>Common routes:</strong> Quick presets for typical passages. Dover-Calais is the classic cross-channel benchmark.
+          </p>
+          <p>
+            The calculator assumes cruising at optimal efficiency speed. Higher speeds would require more fuel but arrive faster.
+          </p>
+        </InfoTooltip>
+      </div>
       {/* Input Section */}
       <div className="space-y-3">
         {/* Distance input */}

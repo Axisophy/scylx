@@ -3,6 +3,7 @@
 import { useMemo } from 'react';
 import { useHullStore } from '@/state/useHullStore';
 import { calculateSafetyEquipment, type SafetyItem } from '@/engine/operations';
+import { InfoTooltip } from '@/components/ui/InfoTooltip';
 
 function formatCurrency(value: number): string {
   return new Intl.NumberFormat('en-US', {
@@ -78,7 +79,26 @@ export function SafetyEquipment() {
   );
 
   return (
-    <div className="h-full flex flex-col p-3 overflow-y-auto custom-scrollbar">
+    <div className="h-full flex flex-col p-3 overflow-y-auto custom-scrollbar relative">
+      <div className="absolute top-2 right-2 z-10">
+        <InfoTooltip title="Safety Equipment">
+          <p>
+            Minimum safety equipment requirements based on <strong>CE Category</strong> certification standards.
+          </p>
+          <p>
+            <strong>Category C:</strong> Designed for inshore waters (waves up to 2m, wind to Force 6). Most small craft fall into this category.
+          </p>
+          <p>
+            <strong>Category D:</strong> Sheltered waters only (waves up to 0.3m, wind to Force 4). Calmer lakes and rivers.
+          </p>
+          <p>
+            <strong>Required items:</strong> Marked with green checkboxes - you must carry these for legal compliance and basic safety.
+          </p>
+          <p>
+            <strong>Recommended items:</strong> Optional but sensible additions for your operating area.
+          </p>
+        </InfoTooltip>
+      </div>
       {/* CE Category badge */}
       <div className="flex items-center justify-between mb-3">
         <div className="flex items-center gap-2">

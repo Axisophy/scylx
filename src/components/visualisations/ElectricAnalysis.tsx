@@ -3,6 +3,7 @@
 import { useMemo, useState } from 'react';
 import { useHullStore } from '@/state/useHullStore';
 import { calculateElectricSystem, type ClimateZone } from '@/engine/electric';
+import { InfoTooltip } from '@/components/ui/InfoTooltip';
 
 function formatCurrency(value: number): string {
   return new Intl.NumberFormat('en-US', {
@@ -89,7 +90,26 @@ export function ElectricAnalysis() {
   );
 
   return (
-    <div className="h-full overflow-y-auto custom-scrollbar p-3">
+    <div className="h-full overflow-y-auto custom-scrollbar p-3 relative">
+      <div className="absolute top-2 right-2 z-10">
+        <InfoTooltip title="Electric Propulsion">
+          <p>
+            Sizing calculations for an <strong>electric propulsion</strong> system with solar charging capability.
+          </p>
+          <p>
+            <strong>Solar panels:</strong> Based on available deck area. Daily harvest varies significantly by climate zone - tropical gets ~5x more usable sun hours than nordic winter.
+          </p>
+          <p>
+            <strong>Motor sizing:</strong> Matched to hull resistance curve for efficient operation. Electric motors are most efficient at partial throttle.
+          </p>
+          <p>
+            <strong>LiFePO4 vs AGM:</strong> Lithium iron phosphate batteries offer 2-3x the energy density and much longer cycle life, making them the preferred choice despite higher upfront cost.
+          </p>
+          <p>
+            <strong>Range:</strong> Combines battery capacity with solar input for realistic daily cruising range estimates.
+          </p>
+        </InfoTooltip>
+      </div>
       <div className="mb-3 flex items-center justify-between">
         <span className="text-[10px] text-muted-foreground">Climate zone:</span>
         <ClimateSelector value={climate} onChange={setClimate} />

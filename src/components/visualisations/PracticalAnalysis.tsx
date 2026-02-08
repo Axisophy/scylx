@@ -8,6 +8,7 @@ import {
   calculateTrailerRequirements,
   calculateMooringCosts,
 } from '@/engine/practical';
+import { InfoTooltip } from '@/components/ui/InfoTooltip';
 
 function formatCurrency(value: number): string {
   return new Intl.NumberFormat('en-US', {
@@ -64,7 +65,23 @@ export function PracticalAnalysis() {
   const mooring = useMemo(() => calculateMooringCosts(params), [params]);
 
   return (
-    <div className="h-full overflow-y-auto custom-scrollbar p-3">
+    <div className="h-full overflow-y-auto custom-scrollbar p-3 relative">
+      <div className="absolute top-2 right-2 z-10">
+        <InfoTooltip title="Practical Analysis">
+          <p>
+            Estimates for building this hull using the <strong>stitch-and-glue</strong> method - a popular technique for amateur builders using plywood panels joined with epoxy and fibreglass tape.
+          </p>
+          <p>
+            <strong>Materials:</strong> Based on hull surface area and standard construction practices. Includes marine-grade plywood, epoxy resin, fibreglass cloth, and antifouling paint.
+          </p>
+          <p>
+            <strong>Build time:</strong> Estimated hours for each construction phase, assuming intermediate woodworking skills.
+          </p>
+          <p>
+            <strong>Trailer:</strong> Requirements based on total weight including gear and fuel. Registration thresholds vary by region.
+          </p>
+        </InfoTooltip>
+      </div>
       <div className="grid grid-cols-2 gap-3">
         {/* Materials */}
         <SectionCard title="Materials (Stitch & Glue)">

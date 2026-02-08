@@ -5,6 +5,7 @@ import * as d3 from 'd3';
 import { useHullStore, useSurrogateReady } from '@/state/useHullStore';
 import { calculatePhysics } from '@/engine/physics';
 import type { HullParams, PhysicsResults } from '@/types/hull';
+import { InfoTooltip } from '@/components/ui/InfoTooltip';
 
 interface ParetoPoint {
   params: HullParams;
@@ -234,6 +235,22 @@ export function ParetoFrontier() {
       <svg ref={svgRef} className="w-full h-full" />
       <div className="absolute bottom-1 right-2 text-[8px] text-muted-foreground">
         Click any point to explore
+      </div>
+      <div className="absolute top-2 right-2">
+        <InfoTooltip title="Pareto Frontier">
+          <p>
+            The <strong>Pareto frontier</strong> shows the optimal trade-offs between competing objectives - in this case, stability (GM) vs speed.
+          </p>
+          <p>
+            Points on the blue line are <strong>Pareto-optimal</strong>: you cannot improve one metric without sacrificing the other. All points below the line are suboptimal.
+          </p>
+          <p>
+            <strong>Click any point</strong> to set your hull parameters to that configuration. The orange marker shows your current design.
+          </p>
+          <p>
+            Point color indicates displacement - useful for understanding how weight affects the trade-off space.
+          </p>
+        </InfoTooltip>
       </div>
     </div>
   );

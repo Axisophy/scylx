@@ -6,6 +6,7 @@ import { useHullStore } from '@/state/useHullStore';
 import { calculatePhysics } from '@/engine/physics';
 import { PARAM_BOUNDS } from '@/types/hull';
 import type { HullParams, PhysicsResults } from '@/types/hull';
+import { InfoTooltip } from '@/components/ui/InfoTooltip';
 
 type FitnessMetric = 'speed' | 'stability' | 'balanced';
 
@@ -343,7 +344,26 @@ export function EvolutionaryOptimizer() {
   };
 
   return (
-    <div ref={containerRef} className="h-full w-full flex flex-col">
+    <div ref={containerRef} className="h-full w-full flex flex-col relative">
+      <div className="absolute top-2 right-2 z-10">
+        <InfoTooltip title="Evolutionary Optimizer">
+          <p>
+            A <strong>genetic algorithm</strong> that evolves hull designs toward optimal performance.
+          </p>
+          <p>
+            <strong>How it works:</strong> A population of random designs competes based on fitness. The best designs "breed" to create the next generation, with random mutations introducing variation.
+          </p>
+          <p>
+            <strong>Fitness metrics:</strong> Choose between optimizing for speed, stability, or a balanced combination of both.
+          </p>
+          <p>
+            <strong>Click any point</strong> to apply those parameters to your hull. The orange marker shows the current best individual.
+          </p>
+          <p>
+            Evolution typically converges within 50-100 generations.
+          </p>
+        </InfoTooltip>
+      </div>
       {/* Controls */}
       <div className="flex items-center gap-2 px-3 py-2 border-b border-muted-foreground/10">
         <select

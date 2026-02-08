@@ -3,6 +3,7 @@
 import { useMemo } from 'react';
 import { useHullStore } from '@/state/useHullStore';
 import { calculateAnchorSizing } from '@/engine/operations';
+import { InfoTooltip } from '@/components/ui/InfoTooltip';
 
 function formatCurrency(value: number): string {
   return new Intl.NumberFormat('en-US', {
@@ -55,7 +56,26 @@ export function AnchorSizing() {
   );
 
   return (
-    <div className="h-full flex flex-col p-3 overflow-y-auto custom-scrollbar">
+    <div className="h-full flex flex-col p-3 overflow-y-auto custom-scrollbar relative">
+      <div className="absolute top-2 right-2 z-10">
+        <InfoTooltip title="Anchor Sizing">
+          <p>
+            Ground tackle recommendations based on boat displacement and windage, following manufacturer guidelines for modern anchor designs.
+          </p>
+          <p>
+            <strong>Primary anchor:</strong> Your main anchor for overnight stays. Modern designs like Rocna/Mantus set quickly and hold well in most seabeds.
+          </p>
+          <p>
+            <strong>Kedge:</strong> A lighter secondary anchor for kedging off sandbars, setting a stern anchor, or backup.
+          </p>
+          <p>
+            <strong>Scope:</strong> The ratio of rode length to water depth. More scope = better holding. 5:1 minimum in calm conditions, 7:1+ in heavy weather.
+          </p>
+          <p>
+            Chain provides weight to keep the pull horizontal - critical for holding power.
+          </p>
+        </InfoTooltip>
+      </div>
       {/* Anchor cards */}
       <div className="grid grid-cols-2 gap-2">
         <AnchorCard

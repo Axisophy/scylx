@@ -8,6 +8,7 @@ import { useHullStore } from '@/state/useHullStore';
 import { calculatePhysics } from '@/engine/physics';
 import { PARAM_BOUNDS } from '@/types/hull';
 import type { HullParams } from '@/types/hull';
+import { InfoTooltip } from '@/components/ui/InfoTooltip';
 
 const GRID_SIZE = 25;
 
@@ -177,6 +178,25 @@ export function StabilityLandscape() {
 
   return (
     <div className="h-full w-full relative">
+      <div className="absolute top-2 right-2 z-10">
+        <InfoTooltip title="Stability Landscape">
+          <p>
+            A <strong>3D visualization</strong> of metacentric height (GM) across the design space.
+          </p>
+          <p>
+            <strong>Axes:</strong> The horizontal plane shows LWL vs Beam combinations. Height represents GM - taller peaks mean more stable boats.
+          </p>
+          <p>
+            <strong>Color coding:</strong> Green = stiff (high GM), blue = moderate, orange = tender, red = dangerous (capsize risk).
+          </p>
+          <p>
+            <strong>The key insight:</strong> Notice how beam has a dramatic effect on stability - GM is proportional to beam cubed (B³), so wider boats are dramatically stiffer.
+          </p>
+          <p>
+            The orange marker shows your current hull position on the landscape.
+          </p>
+        </InfoTooltip>
+      </div>
       <Canvas
         camera={{
           position: [2, 2, 2],

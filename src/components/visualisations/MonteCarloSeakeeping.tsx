@@ -3,6 +3,7 @@
 import { useRef, useEffect, useState, useCallback } from 'react';
 import * as d3 from 'd3';
 import { useHullStore } from '@/state/useHullStore';
+import { InfoTooltip } from '@/components/ui/InfoTooltip';
 
 interface SimulationResult {
   maxHeel: number;
@@ -277,7 +278,26 @@ export function MonteCarloSeakeeping() {
   const dangerProbability = state.totalRuns > 0 ? (state.dangerCount / state.totalRuns * 100) : 0;
 
   return (
-    <div ref={containerRef} className="h-full w-full flex flex-col">
+    <div ref={containerRef} className="h-full w-full flex flex-col relative">
+      <div className="absolute top-2 right-2 z-10">
+        <InfoTooltip title="Monte Carlo Seakeeping">
+          <p>
+            <strong>Monte Carlo simulation</strong> of random wave encounters to estimate capsize and swamping probability.
+          </p>
+          <p>
+            <strong>How it works:</strong> Simulates 500 random wave encounters using a simplified roll response model, with wave heights drawn from a Rayleigh distribution matching the selected sea state.
+          </p>
+          <p>
+            <strong>Sea State:</strong> Based on Beaufort scale - each level roughly doubles the significant wave height.
+          </p>
+          <p>
+            <strong>Danger zone:</strong> Heel angles above 30° are uncomfortable and potentially dangerous. Above 45° risks capsize.
+          </p>
+          <p>
+            Results show the statistical distribution of maximum heel angles your boat would experience.
+          </p>
+        </InfoTooltip>
+      </div>
       {/* Controls */}
       <div className="flex items-center gap-2 px-3 py-2 border-b border-muted-foreground/10">
         <label className="text-[9px] text-muted-foreground">Sea State:</label>

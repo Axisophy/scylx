@@ -9,6 +9,7 @@ import {
   calculateFlotationAnalysis,
   calculateCockpitDrainage,
 } from '@/engine/structure';
+import { InfoTooltip } from '@/components/ui/InfoTooltip';
 
 function StatusBadge({ status }: { status: 'safe' | 'marginal' | 'reinforce' | 'optimal' | 'acceptable' | 'overloaded' | 'trimmed' }) {
   const colors = {
@@ -87,7 +88,26 @@ export function StructureAnalysis() {
   );
 
   return (
-    <div className="h-full overflow-y-auto custom-scrollbar p-3">
+    <div className="h-full overflow-y-auto custom-scrollbar p-3 relative">
+      <div className="absolute top-2 right-2 z-10">
+        <InfoTooltip title="Structural Analysis">
+          <p>
+            Engineering calculations based on simplified <strong>ISO 12215-5</strong> (Small Craft Hull Construction) standards.
+          </p>
+          <p>
+            <strong>Panel Stiffness:</strong> Analyses hull panels for design pressure, deflection under load, and safety factor. Status indicates if reinforcement is needed.
+          </p>
+          <p>
+            <strong>Payload:</strong> Maximum safe loading capacity and how current loading affects trim (fore/aft angle).
+          </p>
+          <p>
+            <strong>Flotation:</strong> ISO 12217 requirements for positive flotation foam to keep the boat afloat when swamped.
+          </p>
+          <p>
+            <strong>Drainage:</strong> Self-draining cockpit requirements - important for safety in rough conditions.
+          </p>
+        </InfoTooltip>
+      </div>
       <div className="grid grid-cols-2 gap-3">
         {/* Panel Analysis */}
         <SectionCard title="Panel Stiffness" status={structure.overallStatus}>

@@ -3,6 +3,7 @@
 import { useMemo } from 'react';
 import { useHullStore } from '@/state/useHullStore';
 import { calculateWaterBallast } from '@/engine/operations';
+import { InfoTooltip } from '@/components/ui/InfoTooltip';
 
 function ComparisonBar({
   label,
@@ -64,7 +65,23 @@ export function WaterBallast() {
   );
 
   return (
-    <div className="h-full flex flex-col p-3 overflow-y-auto custom-scrollbar">
+    <div className="h-full flex flex-col p-3 overflow-y-auto custom-scrollbar relative">
+      <div className="absolute top-2 right-2 z-10">
+        <InfoTooltip title="Water Ballast">
+          <p>
+            A <strong>water ballast system</strong> allows you to increase stability by flooding tanks low in the hull when conditions demand it.
+          </p>
+          <p>
+            <strong>How it works:</strong> Water (1kg/L) added low in the hull lowers the centre of gravity, increasing GM and making the boat stiffer.
+          </p>
+          <p>
+            <strong>Trade-offs:</strong> Increased stability comes at the cost of higher displacement, deeper draft, and reduced freeboard.
+          </p>
+          <p>
+            <strong>When to use:</strong> Heavy weather, when motoring into waves, or when sailing with a small crew. Drain the tanks for light-air sailing or shallow waters.
+          </p>
+        </InfoTooltip>
+      </div>
       {/* Tank specs */}
       <div className="bg-accent-primary/10 border border-accent-primary/30 rounded p-2 mb-3">
         <div className="flex items-center justify-between mb-1">

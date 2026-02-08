@@ -4,6 +4,7 @@ import { useMemo, useRef, useEffect } from 'react';
 import { useHullStore } from '@/state/useHullStore';
 import { calculateFuelAnalysis } from '@/engine/operations';
 import * as d3 from 'd3';
+import { InfoTooltip } from '@/components/ui/InfoTooltip';
 
 function MetricCard({
   label,
@@ -198,7 +199,26 @@ export function FuelRangeAnalysis() {
   const hullSpeed = 1.34 * Math.sqrt(params.lwl * 3.28084);
 
   return (
-    <div className="h-full flex flex-col p-3">
+    <div className="h-full flex flex-col p-3 relative">
+      <div className="absolute top-2 right-2 z-10">
+        <InfoTooltip title="Fuel & Range">
+          <p>
+            Fuel consumption and range analysis based on hull resistance at different speeds.
+          </p>
+          <p>
+            <strong>Orange line:</strong> Fuel consumption (L/hr) increases exponentially near hull speed due to wave-making resistance.
+          </p>
+          <p>
+            <strong>Blue line:</strong> Efficiency (nm/L) shows the sweet spot where you get the most distance per litre - typically 60-70% of hull speed.
+          </p>
+          <p>
+            <strong>Optimal cruise:</strong> The dashed line marks the most efficient cruising speed, balancing consumption against progress.
+          </p>
+          <p>
+            <strong>Engine sizing:</strong> Min HP gets you to hull speed, recommended provides comfortable reserve, max is the structural limit.
+          </p>
+        </InfoTooltip>
+      </div>
       {/* Chart */}
       <div className="flex-1 min-h-0 relative">
         <svg ref={svgRef} className="w-full h-full" />
