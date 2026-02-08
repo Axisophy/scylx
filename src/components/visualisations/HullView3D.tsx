@@ -169,6 +169,10 @@ function generateHullGeometry(
   geometry.setIndex(indices);
   geometry.computeVertexNormals();
 
+  // Flip geometry to correct normal orientation
+  geometry.scale(1, 1, -1);
+  geometry.computeVertexNormals();
+
   return geometry;
 }
 
