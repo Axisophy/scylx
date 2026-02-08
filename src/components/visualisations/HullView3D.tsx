@@ -130,21 +130,28 @@ function createSimpleHullGeometry(
     }
   }
 
-  // Stern cap
+  // Stern cap (transom) - create a flat back
+  const sternTaper = 0.3; // matches taper at t=0
+  const sternDepth = depth;
   const sternCenterIdx = positions.length / 3;
-  positions.push(-halfLength, -depth * 0.5, 0);
+  positions.push(-halfLength, -sternDepth * 0.5, 0);
   normals.push(-1, 0, 0);
+
+  // Add stern cap triangles - fan from center to profile edge
   for (let j = 0; j < profilePoints; j++) {
-    indices.push(sternCenterIdx, j + 1, j);
+    // Connect center to adjacent profile vertices
+    indices.push(sternCenterIdx, j, j + 1);
   }
 
-  // Bow cap
+  // Bow cap - pointed, connects to the tapered bow section
   const bowStart = segments * vertsPerSection;
   const bowCenterIdx = positions.length / 3;
-  positions.push(halfLength, -depth * 0.3, 0);
+  // Bow point at the front
+  positions.push(halfLength * 1.02, -depth * 0.15, 0);
   normals.push(1, 0, 0);
+
   for (let j = 0; j < profilePoints; j++) {
-    indices.push(bowCenterIdx, bowStart + j, bowStart + j + 1);
+    indices.push(bowCenterIdx, bowStart + j + 1, bowStart + j);
   }
 
   const geometry = new THREE.BufferGeometry();
@@ -194,7 +201,8 @@ function Hull({ waveMode }: HullProps) {
   });
 
   const draft = results.draft || 0.25;
-  const yOffset = draft;
+  const freeboard = params.depth - draft;
+  const yOffset = freeboard; // Position hull so waterline is at y=0
 
   // Create deck shape that matches hull outline at gunwale
   const deckShape = useMemo(() => {
