@@ -62,10 +62,15 @@ export function AboutDrawer({ isOpen, onClose }: AboutDrawerProps) {
                 <h3 className="font-ui text-xs font-medium text-muted uppercase tracking-wider mb-2">
                   The Project
                 </h3>
-                <p className="text-foreground/80">
+                <p className="text-foreground/80 mb-3">
                   SCYLX is a parametric boat hull hydrodynamics simulator built to demonstrate the
                   PhysicsX methodology: generate physics data, train an AI surrogate, enable instant
                   exploration of the design space.
+                </p>
+                <p className="text-foreground/80">
+                  The name comes from Scylax of Caryanda, the ancient Greek explorer who wrote one of the
+                  first sailing guides (Periplus) in the 6th century BCE, documenting coastlines and
+                  harbours for future navigators.
                 </p>
               </section>
 
@@ -73,23 +78,37 @@ export function AboutDrawer({ isOpen, onClose }: AboutDrawerProps) {
                 <h3 className="font-ui text-xs font-medium text-muted uppercase tracking-wider mb-2">
                   How It Works
                 </h3>
-                <ol className="space-y-2 text-foreground/80 list-decimal list-inside">
+                <p className="text-foreground/80 mb-3">
+                  Traditional hull design requires expensive CFD simulations or towing tank tests for each
+                  configuration. This tool takes a different approach:
+                </p>
+                <ol className="space-y-2 text-foreground/80 list-decimal list-inside mb-3">
                   <li>On load, ~10,000 hull configurations are swept through analytical physics formulas</li>
                   <li>A small neural network (MLP) is trained in your browser using TensorFlow.js</li>
                   <li>The trained surrogate enables instant prediction across the entire design space</li>
                   <li>Click anywhere on the Design Space Map to explore configurations between the training points</li>
                 </ol>
+                <p className="text-foreground/80">
+                  This mirrors the approach used by PhysicsX for aircraft and vehicle design, where neural
+                  surrogates trained on simulation data enable real-time design exploration that would
+                  otherwise require hours of computation per configuration.
+                </p>
               </section>
 
               <section>
                 <h3 className="font-ui text-xs font-medium text-muted uppercase tracking-wider mb-2">
                   Key Insight
                 </h3>
-                <p className="text-foreground/80">
+                <p className="text-foreground/80 mb-3">
                   The stability cross-section demonstrates that metacentric height (GM) depends on
                   beam <em>cubed</em>. Drag the beam slider and watch how dramatically the metacentre
                   position changes. This is the kind of intuition-building through direct manipulation
                   that makes complex physics accessible.
+                </p>
+                <p className="text-foreground/80">
+                  The tool also reveals phase transitions in hull behaviour - the dramatic increase
+                  in wave-making resistance as you approach hull speed, or the critical stability
+                  thresholds that separate a comfortable boat from a dangerous one.
                 </p>
               </section>
 
@@ -97,23 +116,36 @@ export function AboutDrawer({ isOpen, onClose }: AboutDrawerProps) {
                 <h3 className="font-ui text-xs font-medium text-muted uppercase tracking-wider mb-2">
                   Physics Engine
                 </h3>
-                <ul className="space-y-1 text-foreground/80 text-xs font-mono">
-                  <li>Displacement: T = Delta / (rho x L x B x CB)</li>
+                <p className="text-foreground/80 mb-3">
+                  The analytical physics engine uses established naval architecture formulas:
+                </p>
+                <ul className="space-y-1 text-foreground/80 text-xs font-mono mb-3">
+                  <li>Draft: T = Delta / (rho x L x B x CB)</li>
                   <li>Stability: GM = KB + BM - KG</li>
-                  <li>BM = I / nabla (where I prop B cubed)</li>
+                  <li>Metacentric radius: BM = I / nabla</li>
                   <li>Hull Speed: V = 1.34 x sqrt(LWL_ft)</li>
-                  <li>Resistance: ITTC 1957 + Havelock wave</li>
+                  <li>Friction: ITTC 1957 correlation line</li>
+                  <li>Wave resistance: Havelock thin-ship theory</li>
                 </ul>
+                <p className="text-foreground/80">
+                  These formulas provide good approximations for displacement hulls in the speed range
+                  typical of small craft. Higher fidelity would require CFD simulation.
+                </p>
               </section>
 
               <section>
                 <h3 className="font-ui text-xs font-medium text-muted uppercase tracking-wider mb-2">
                   The Hull
                 </h3>
+                <p className="text-foreground/80 mb-3">
+                  The baseline design is a trailerable micro cruiser inspired by projects like
+                  Lukas Seaman's True North Helios. At 6.5-7.5m length and 1.2-2.0m beam, it sits
+                  in the sweet spot for road-legal trailering in most jurisdictions.
+                </p>
                 <p className="text-foreground/80">
-                  A trailerable micro cruiser inspired by Lukas Seaman's True North Helios project.
-                  6.5-7.5m length, 1.2-2.0m beam, designed for calm seas with occasional coastal passages.
-                  The narrow beam optimizes for efficiency while maintaining adequate stability.
+                  The relatively narrow beam optimizes for efficiency and sea-kindliness over
+                  interior volume - a design philosophy suited to coastal passages and
+                  canal cruising rather than marina living.
                 </p>
               </section>
 
@@ -122,7 +154,7 @@ export function AboutDrawer({ isOpen, onClose }: AboutDrawerProps) {
                   Technology
                 </h3>
                 <div className="flex flex-wrap gap-2">
-                  {['Next.js 15', 'TypeScript', 'TensorFlow.js', 'D3.js', 'Three.js', 'Zustand', 'Tailwind'].map((tech) => (
+                  {['Next.js 15', 'TypeScript', 'TensorFlow.js', 'React Three Fiber', 'D3.js', 'Zustand', 'Tailwind CSS'].map((tech) => (
                     <span
                       key={tech}
                       className="px-2 py-0.5 text-xs font-mono bg-muted-foreground/10 rounded"
@@ -135,8 +167,8 @@ export function AboutDrawer({ isOpen, onClose }: AboutDrawerProps) {
 
               <section className="pt-4 border-t border-muted-foreground/20">
                 <p className="text-xs text-muted">
-                  Named after Scylax of Caryanda, the ancient Greek explorer who wrote one of the
-                  first sailing guides (Periplus) in the 6th century BCE.
+                  Built by Simon Tyler as a portfolio piece demonstrating product design for
+                  physics simulation tools.
                 </p>
               </section>
             </div>

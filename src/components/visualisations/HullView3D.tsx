@@ -2,7 +2,7 @@
 
 import { useRef, useMemo, useState } from 'react';
 import { Canvas, useFrame } from '@react-three/fiber';
-import { OrbitControls, Grid, ContactShadows } from '@react-three/drei';
+import { OrbitControls, Grid } from '@react-three/drei';
 import * as THREE from 'three';
 import { useHullStore } from '@/state/useHullStore';
 
@@ -10,168 +10,147 @@ interface HullProps {
   waveMode: boolean;
 }
 
-// Generate hull geometry using Three.js Y-up convention
-// X = length (bow at +X, stern at -X)
-// Y = vertical (up)
-// Z = beam (port at +Z, starboard at -Z)
-function generateHullGeometry(
+// Create hull using ExtrudeGeometry for reliable normals
+function createHullGeometry(
   lwl: number,
   beam: number,
   depth: number,
-  hullType: string,
-  deadrise: number
+  hullType: string
+): THREE.ExtrudeGeometry {
+  const halfBeam = beam / 2;
+
+  // Create cross-section shape (looking from bow)
+  const shape = new THREE.Shape();
+
+  if (hullType === 'flat-bottom') {
+    // Flat bottom hull profile
+    shape.moveTo(0, -depth); // Keel center
+    shape.lineTo(halfBeam * 0.7, -depth); // Flat bottom edge
+    shape.quadraticCurveTo(halfBeam, -depth * 0.5, halfBeam, 0); // Bilge curve to gunwale
+    shape.lineTo(-halfBeam, 0); // Across deck (top)
+    shape.quadraticCurveTo(-halfBeam, -depth * 0.5, -halfBeam * 0.7, -depth); // Other side
+    shape.lineTo(0, -depth); // Back to keel
+  } else {
+    // Vee hull profile
+    shape.moveTo(0, -depth * 1.1); // Keel (deeper for vee)
+    shape.lineTo(halfBeam * 0.5, -depth * 0.7); // Chine
+    shape.quadraticCurveTo(halfBeam, -depth * 0.3, halfBeam, 0); // Topsides curve
+    shape.lineTo(-halfBeam, 0); // Across deck
+    shape.quadraticCurveTo(-halfBeam, -depth * 0.3, -halfBeam * 0.5, -depth * 0.7); // Other topsides
+    shape.lineTo(0, -depth * 1.1); // Back to keel
+  }
+
+  // Create extrude path with taper
+  const extrudeSettings: THREE.ExtrudeGeometryOptions = {
+    steps: 30,
+    bevelEnabled: false,
+    extrudePath: createHullPath(lwl),
+  };
+
+  return new THREE.ExtrudeGeometry(shape, extrudeSettings);
+}
+
+// Create a curved path for the hull to follow (gives bow/stern taper)
+function createHullPath(lwl: number): THREE.CatmullRomCurve3 {
+  const halfLength = lwl / 2;
+
+  const points = [
+    new THREE.Vector3(-halfLength, 0, 0),      // Stern
+    new THREE.Vector3(-halfLength * 0.6, 0, 0),
+    new THREE.Vector3(0, 0, 0),                 // Midship
+    new THREE.Vector3(halfLength * 0.6, 0, 0),
+    new THREE.Vector3(halfLength, 0, 0),        // Bow
+  ];
+
+  return new THREE.CatmullRomCurve3(points);
+}
+
+// Simpler approach: Create hull from scaled sections
+function createSimpleHullGeometry(
+  lwl: number,
+  beam: number,
+  depth: number,
+  hullType: string
 ): THREE.BufferGeometry {
+  const segments = 24;
   const halfLength = lwl / 2;
   const halfBeam = beam / 2;
-  const deadriseRad = (deadrise * Math.PI) / 180;
-
-  const lengthSegments = 20;
-  const profilePoints = 8; // Points per side of hull profile
 
   const positions: number[] = [];
+  const normals: number[] = [];
   const indices: number[] = [];
 
-  // Generate hull as a series of cross-sections from stern to bow
-  for (let i = 0; i <= lengthSegments; i++) {
-    const t = i / lengthSegments; // 0 = stern, 1 = bow
-    const x = -halfLength + t * lwl; // stern at -halfLength, bow at +halfLength
+  // Generate vertices for each cross-section
+  const profilePoints = 12;
 
-    // Width varies along length - narrow at bow, full amidships, slightly narrow at stern
-    let widthFactor: number;
-    if (t < 0.3) {
-      // Stern section - gradual taper
-      widthFactor = 0.7 + 0.3 * (t / 0.3);
-    } else if (t < 0.7) {
-      // Midship - full width
-      widthFactor = 1.0;
-    } else {
-      // Bow section - taper to point
-      widthFactor = 1.0 - 0.9 * Math.pow((t - 0.7) / 0.3, 1.5);
+  for (let i = 0; i <= segments; i++) {
+    const t = i / segments;
+    const x = -halfLength + t * lwl;
+
+    // Taper factor
+    let taper = 1.0;
+    if (t < 0.25) {
+      taper = 0.3 + 0.7 * (t / 0.25);
+    } else if (t > 0.75) {
+      taper = 1.0 - 0.85 * ((t - 0.75) / 0.25);
     }
-    widthFactor = Math.max(0.05, widthFactor); // Minimum width at bow
+    taper = Math.max(0.05, taper);
 
-    const sectionHalfBeam = halfBeam * widthFactor;
-    const sectionDepth = depth * (t < 0.8 ? 1.0 : 1.0 - 0.3 * ((t - 0.8) / 0.2));
+    const sectionHalfBeam = halfBeam * taper;
+    const sectionDepth = depth * (t > 0.85 ? 1.0 - 0.4 * ((t - 0.85) / 0.15) : 1.0);
 
-    // Generate profile points for this section (from keel up port side, then down starboard)
-    // We go: keel -> port chine -> port gunwale -> starboard gunwale -> starboard chine -> back to keel
-
-    for (let j = 0; j <= profilePoints * 2; j++) {
-      let y: number, z: number;
-
-      if (j <= profilePoints) {
-        // Port side: j=0 is keel, j=profilePoints is port gunwale
-        const s = j / profilePoints;
-
-        if (hullType === 'flat-bottom') {
-          // Flat bottom with curved sides
-          if (s < 0.3) {
-            // Bottom section (flat)
-            z = sectionHalfBeam * (s / 0.3) * 0.6;
-            y = -sectionDepth;
-          } else {
-            // Side section (curves up)
-            const sideT = (s - 0.3) / 0.7;
-            z = sectionHalfBeam * (0.6 + 0.4 * sideT);
-            y = -sectionDepth * (1 - sideT);
-          }
-        } else {
-          // Vee hull
-          const veeDepth = Math.tan(deadriseRad) * sectionHalfBeam * 0.3;
-          if (s < 0.4) {
-            // Bottom vee section
-            const veeT = s / 0.4;
-            z = sectionHalfBeam * 0.5 * veeT;
-            y = -sectionDepth - veeDepth * (1 - veeT);
-          } else {
-            // Side section
-            const sideT = (s - 0.4) / 0.6;
-            z = sectionHalfBeam * (0.5 + 0.5 * sideT);
-            y = -sectionDepth * (1 - sideT * 0.95);
-          }
-        }
-      } else {
-        // Starboard side: mirror of port
-        const mirrorJ = profilePoints * 2 - j;
-        const s = mirrorJ / profilePoints;
-
-        if (hullType === 'flat-bottom') {
-          if (s < 0.3) {
-            z = -sectionHalfBeam * (s / 0.3) * 0.6;
-            y = -sectionDepth;
-          } else {
-            const sideT = (s - 0.3) / 0.7;
-            z = -sectionHalfBeam * (0.6 + 0.4 * sideT);
-            y = -sectionDepth * (1 - sideT);
-          }
-        } else {
-          const veeDepth = Math.tan(deadriseRad) * sectionHalfBeam * 0.3;
-          if (s < 0.4) {
-            const veeT = s / 0.4;
-            z = -sectionHalfBeam * 0.5 * veeT;
-            y = -sectionDepth - veeDepth * (1 - veeT);
-          } else {
-            const sideT = (s - 0.4) / 0.6;
-            z = -sectionHalfBeam * (0.5 + 0.5 * sideT);
-            y = -sectionDepth * (1 - sideT * 0.95);
-          }
-        }
-      }
+    // Generate profile for this section
+    for (let j = 0; j <= profilePoints; j++) {
+      const angle = (j / profilePoints) * Math.PI; // 0 to PI (half circle, port to starboard via keel)
+      const z = Math.cos(angle) * sectionHalfBeam;
+      const y = -Math.sin(angle) * sectionDepth;
 
       positions.push(x, y, z);
+
+      // Normal pointing outward
+      const nx = 0;
+      const ny = -Math.sin(angle);
+      const nz = Math.cos(angle);
+      const len = Math.sqrt(ny * ny + nz * nz);
+      normals.push(nx, ny / len, nz / len);
     }
   }
 
-  // Generate indices - connect adjacent sections
-  const pointsPerSection = profilePoints * 2 + 1;
-
-  for (let i = 0; i < lengthSegments; i++) {
-    for (let j = 0; j < pointsPerSection - 1; j++) {
-      const a = i * pointsPerSection + j;
+  // Generate indices
+  const vertsPerSection = profilePoints + 1;
+  for (let i = 0; i < segments; i++) {
+    for (let j = 0; j < profilePoints; j++) {
+      const a = i * vertsPerSection + j;
       const b = a + 1;
-      const c = (i + 1) * pointsPerSection + j;
+      const c = (i + 1) * vertsPerSection + j;
       const d = c + 1;
 
-      // Two triangles per quad - reversed winding for outward-facing normals
       indices.push(a, c, b);
       indices.push(b, c, d);
     }
-
-    // Close the loop (connect last point to first)
-    const a = i * pointsPerSection + (pointsPerSection - 1);
-    const b = i * pointsPerSection;
-    const c = (i + 1) * pointsPerSection + (pointsPerSection - 1);
-    const d = (i + 1) * pointsPerSection;
-
-    indices.push(a, c, b);
-    indices.push(b, c, d);
   }
 
-  // Cap the stern (i=0)
+  // Stern cap
   const sternCenterIdx = positions.length / 3;
-  positions.push(-halfLength, -depth * 0.5, 0); // Stern center point
-  for (let j = 0; j < pointsPerSection - 1; j++) {
-    indices.push(sternCenterIdx, j, j + 1);
+  positions.push(-halfLength, -depth * 0.5, 0);
+  normals.push(-1, 0, 0);
+  for (let j = 0; j < profilePoints; j++) {
+    indices.push(sternCenterIdx, j + 1, j);
   }
-  indices.push(sternCenterIdx, pointsPerSection - 1, 0);
 
-  // Cap the bow (i=lengthSegments)
-  const bowStart = lengthSegments * pointsPerSection;
+  // Bow cap
+  const bowStart = segments * vertsPerSection;
   const bowCenterIdx = positions.length / 3;
-  positions.push(halfLength, -depth * 0.3, 0); // Bow center point (higher, pointed)
-  for (let j = 0; j < pointsPerSection - 1; j++) {
-    indices.push(bowCenterIdx, bowStart + j + 1, bowStart + j);
+  positions.push(halfLength, -depth * 0.3, 0);
+  normals.push(1, 0, 0);
+  for (let j = 0; j < profilePoints; j++) {
+    indices.push(bowCenterIdx, bowStart + j, bowStart + j + 1);
   }
-  indices.push(bowCenterIdx, bowStart, bowStart + pointsPerSection - 1);
 
   const geometry = new THREE.BufferGeometry();
   geometry.setAttribute('position', new THREE.Float32BufferAttribute(positions, 3));
+  geometry.setAttribute('normal', new THREE.Float32BufferAttribute(normals, 3));
   geometry.setIndex(indices);
-  geometry.computeVertexNormals();
-
-  // Flip geometry to correct normal orientation
-  geometry.scale(1, 1, -1);
-  geometry.computeVertexNormals();
 
   return geometry;
 }
@@ -182,16 +161,15 @@ function Hull({ waveMode }: HullProps) {
   const results = useHullStore((state) => state.results);
 
   const geometry = useMemo(() => {
-    return generateHullGeometry(
+    return createSimpleHullGeometry(
       params.lwl,
       params.beam,
       params.depth,
-      params.hullType,
-      params.deadrise
+      params.hullType
     );
-  }, [params.lwl, params.beam, params.depth, params.hullType, params.deadrise]);
+  }, [params.lwl, params.beam, params.depth, params.hullType]);
 
-  // Wave response animation based on stability
+  // Wave response animation
   useFrame((state) => {
     if (meshRef.current) {
       const time = state.clock.elapsedTime;
@@ -199,7 +177,6 @@ function Hull({ waveMode }: HullProps) {
       if (waveMode) {
         const rollPeriod = Math.max(1.5, 4.0 - results.GM * 2);
         const pitchPeriod = Math.max(1.0, 3.0 - params.lwl * 0.2);
-
         const waveHeight = 0.15;
         const rollAmplitude = waveHeight * (0.3 / Math.max(results.GM, 0.2));
         const pitchAmplitude = waveHeight * 0.5;
@@ -217,7 +194,28 @@ function Hull({ waveMode }: HullProps) {
   });
 
   const draft = results.draft || 0.25;
-  const yOffset = draft; // Raise hull so waterline (y=0) is at draft level
+  const yOffset = draft;
+
+  // Create deck shape that matches hull outline at gunwale
+  const deckShape = useMemo(() => {
+    const shape = new THREE.Shape();
+    const halfLength = params.lwl / 2;
+    const halfBeam = params.beam / 2;
+
+    // Stern
+    shape.moveTo(-halfLength * 0.95, 0);
+    // Port side curve
+    shape.quadraticCurveTo(-halfLength * 0.5, halfBeam * 0.85, 0, halfBeam * 0.9);
+    shape.quadraticCurveTo(halfLength * 0.5, halfBeam * 0.85, halfLength * 0.85, halfBeam * 0.15);
+    // Bow point
+    shape.lineTo(halfLength * 0.95, 0);
+    // Starboard side
+    shape.lineTo(halfLength * 0.85, -halfBeam * 0.15);
+    shape.quadraticCurveTo(halfLength * 0.5, -halfBeam * 0.85, 0, -halfBeam * 0.9);
+    shape.quadraticCurveTo(-halfLength * 0.5, -halfBeam * 0.85, -halfLength * 0.95, 0);
+
+    return new THREE.ShapeGeometry(shape);
+  }, [params.lwl, params.beam]);
 
   return (
     <group ref={meshRef}>
@@ -243,11 +241,10 @@ function Hull({ waveMode }: HullProps) {
         />
       </mesh>
 
-      {/* Deck surface */}
-      <mesh position={[0, yOffset + 0.01, 0]} rotation={[-Math.PI / 2, 0, 0]}>
-        <planeGeometry args={[params.lwl * 0.85, params.beam * 0.75]} />
+      {/* Deck - matches hull shape */}
+      <mesh geometry={deckShape} position={[0, yOffset + 0.01, 0]} rotation={[-Math.PI / 2, 0, 0]}>
         <meshStandardMaterial
-          color="#E4E4E7"
+          color="#D4D4D8"
           metalness={0}
           roughness={0.9}
           side={THREE.DoubleSide}
@@ -257,11 +254,7 @@ function Hull({ waveMode }: HullProps) {
   );
 }
 
-interface WaterProps {
-  waveMode: boolean;
-}
-
-function Water({ waveMode }: WaterProps) {
+function Water({ waveMode }: { waveMode: boolean }) {
   const meshRef = useRef<THREE.Mesh>(null);
   const params = useHullStore((state) => state.params);
 
@@ -274,13 +267,9 @@ function Water({ waveMode }: WaterProps) {
       for (let i = 0; i < positions.count; i++) {
         const x = positions.getX(i);
         const y = positions.getY(i);
-
-        // Simple wave pattern
-        const wave1 = Math.sin(x * 0.5 + time * 1.5) * 0.05;
-        const wave2 = Math.sin(y * 0.7 + time * 1.2) * 0.03;
-        const wave3 = Math.sin((x + y) * 0.3 + time * 0.8) * 0.02;
-
-        positions.setZ(i, wave1 + wave2 + wave3);
+        const wave = Math.sin(x * 0.5 + time * 1.5) * 0.04 +
+                     Math.sin(y * 0.7 + time * 1.2) * 0.03;
+        positions.setZ(i, wave);
       }
 
       positions.needsUpdate = true;
@@ -288,16 +277,17 @@ function Water({ waveMode }: WaterProps) {
     }
   });
 
+  const waterSize = Math.max(params.lwl, params.beam) * 3;
+
   return (
-    <mesh ref={meshRef} position={[0, -0.01, 0]} rotation={[-Math.PI / 2, 0, 0]}>
-      <planeGeometry args={[params.lwl * 2.5, params.lwl * 2.5, 32, 32]} />
+    <mesh ref={meshRef} position={[0, -0.02, 0]} rotation={[-Math.PI / 2, 0, 0]}>
+      <planeGeometry args={[waterSize, waterSize, 32, 32]} />
       <meshStandardMaterial
-        color="#0EA5E9"
+        color="#0284C7"
         transparent
-        opacity={0.4}
-        metalness={0.1}
-        roughness={0.3}
-        side={THREE.DoubleSide}
+        opacity={0.6}
+        metalness={0.3}
+        roughness={0.2}
       />
     </mesh>
   );
@@ -309,44 +299,26 @@ export function HullView3D() {
   const [waveMode, setWaveMode] = useState(false);
 
   return (
-    <div className="h-full w-full bg-gradient-to-b from-slate-50 to-slate-100 relative">
+    <div className="h-full w-full relative" style={{ background: 'linear-gradient(to bottom, #F0F9FF, #E0F2FE)' }}>
       <Canvas
         camera={{
-          position: [params.lwl * 1.2, params.lwl * 0.4, params.lwl * 0.8],
+          position: [params.lwl * 1.0, params.lwl * 0.5, params.lwl * 0.7],
           fov: 35,
           near: 0.1,
           far: 100,
         }}
         gl={{ localClippingEnabled: true }}
-        shadows
       >
-        {/* Lighting */}
-        <ambientLight intensity={0.6} />
-        <directionalLight
-          position={[10, 15, 10]}
-          intensity={1.2}
-          castShadow
-          shadow-mapSize={[1024, 1024]}
-        />
-        <directionalLight position={[-5, 10, -5]} intensity={0.4} />
-        <hemisphereLight args={['#87CEEB', '#8B4513', 0.3]} />
+        <ambientLight intensity={0.7} />
+        <directionalLight position={[10, 15, 10]} intensity={1.0} />
+        <directionalLight position={[-5, 8, -5]} intensity={0.5} />
+        <hemisphereLight args={['#87CEEB', '#F5F5F4', 0.4]} />
 
-        {/* Scene */}
         <Hull waveMode={waveMode} />
         <Water waveMode={waveMode} />
 
-        {/* Shadows */}
-        <ContactShadows
-          position={[0, -0.5, 0]}
-          opacity={0.3}
-          scale={20}
-          blur={2}
-          far={4}
-        />
-
-        {/* Grid */}
         <Grid
-          position={[0, -0.5, 0]}
+          position={[0, -params.depth - 0.3, 0]}
           args={[20, 20]}
           cellSize={0.5}
           cellThickness={0.5}
@@ -354,7 +326,7 @@ export function HullView3D() {
           sectionSize={2}
           sectionThickness={1}
           sectionColor="#64748B"
-          fadeDistance={15}
+          fadeDistance={12}
           fadeStrength={1}
         />
 
@@ -362,15 +334,14 @@ export function HullView3D() {
           enablePan={false}
           minDistance={3}
           maxDistance={20}
-          minPolarAngle={Math.PI * 0.15}
+          minPolarAngle={Math.PI * 0.1}
           maxPolarAngle={Math.PI * 0.48}
-          target={[0, 0, 0]}
+          target={[0, -params.depth * 0.3, 0]}
           autoRotate={!waveMode}
-          autoRotateSpeed={0.3}
+          autoRotateSpeed={0.4}
         />
       </Canvas>
 
-      {/* Wave mode toggle */}
       <div className="absolute top-2 right-2">
         <button
           onClick={() => setWaveMode(!waveMode)}
@@ -380,15 +351,14 @@ export function HullView3D() {
               : 'bg-background/80 text-muted-foreground hover:text-foreground'
           } backdrop-blur-sm border border-muted-foreground/20`}
         >
-          {waveMode ? '🌊 Waves On' : '🌊 Waves'}
+          {waveMode ? 'Waves On' : 'Waves'}
         </button>
       </div>
 
-      {/* Wave mode info */}
       {waveMode && (
         <div className="absolute top-2 left-2 text-[9px] font-mono bg-background/80 px-2 py-1 rounded backdrop-blur-sm border border-muted-foreground/20">
           <div className="text-muted-foreground">
-            Roll period: <span className="text-foreground">{(4.0 - results.GM * 2).toFixed(1)}s</span>
+            Roll period: <span className="text-foreground">{Math.max(1.5, 4.0 - results.GM * 2).toFixed(1)}s</span>
           </div>
           <div className="text-muted-foreground">
             Response: <span className={results.GM > 0.5 ? 'text-safe' : 'text-warning'}>
@@ -398,9 +368,8 @@ export function HullView3D() {
         </div>
       )}
 
-      {/* Overlay info */}
       <div className="absolute bottom-2 left-2 text-[10px] text-muted-foreground bg-background/70 px-2 py-1 rounded backdrop-blur-sm">
-        Drag to rotate • Scroll to zoom
+        Drag to rotate
       </div>
     </div>
   );
