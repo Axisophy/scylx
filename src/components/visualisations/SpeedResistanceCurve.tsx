@@ -3,6 +3,7 @@
 import { useRef, useEffect, useState } from 'react';
 import * as d3 from 'd3';
 import { useHullStore } from '@/state/useHullStore';
+import { InfoTooltip } from '@/components/ui/InfoTooltip';
 
 export function SpeedResistanceCurve() {
   const svgRef = useRef<SVGSVGElement>(null);
@@ -274,10 +275,29 @@ export function SpeedResistanceCurve() {
           Show power curve
         </label>
         {results.planingCapable && (
-          <span className="ml-auto text-xs text-accent-primary font-medium">
+          <span className="text-xs text-accent-primary font-medium">
             Planing capable
           </span>
         )}
+        <div className="ml-auto">
+          <InfoTooltip title="Speed & Resistance">
+            <p>
+              Shows how resistance increases with speed for this hull configuration.
+            </p>
+            <p>
+              <strong>Blue curve:</strong> Total resistance (friction + wave-making)
+            </p>
+            <p>
+              <strong>Orange curve:</strong> Engine power required to overcome resistance at each speed
+            </p>
+            <p>
+              <strong>Hull speed</strong> (dashed line) is the theoretical maximum for displacement hulls, where wave-making resistance increases dramatically. V = 1.34 × √LWL(ft).
+            </p>
+            <p>
+              Beyond hull speed, the power required increases exponentially. Planing hulls can break through this barrier by rising onto their bow wave.
+            </p>
+          </InfoTooltip>
+        </div>
       </div>
       <svg ref={svgRef} className="flex-1 w-full" />
     </div>

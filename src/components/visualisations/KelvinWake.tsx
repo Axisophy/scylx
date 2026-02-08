@@ -4,6 +4,7 @@ import { useRef, useMemo } from 'react';
 import { Canvas, useFrame } from '@react-three/fiber';
 import * as THREE from 'three';
 import { useHullStore } from '@/state/useHullStore';
+import { InfoTooltip } from '@/components/ui/InfoTooltip';
 
 const kelvinWakeVertexShader = `
   varying vec2 vUv;
@@ -158,9 +159,18 @@ export function KelvinWake() {
         </div>
       </div>
 
-      {/* Kelvin angle explanation */}
-      <div className="absolute bottom-2 right-2 text-[9px] text-muted-foreground max-w-[180px] text-right">
-        Universal wake angle from wave interference mathematics
+      <div className="absolute top-2 right-2">
+        <InfoTooltip title="Kelvin Wake Pattern">
+          <p>
+            The <strong>Kelvin wake</strong> is the V-shaped wave pattern behind a moving vessel, first described by Lord Kelvin in 1887.
+          </p>
+          <p>
+            The wake angle of <strong>19.47°</strong> is universal - it applies to all vessels regardless of size or speed, arising from the mathematics of wave interference.
+          </p>
+          <p>
+            The <strong>Froude number</strong> (Fr = V/√gL) describes the ratio of vessel speed to wave speed. Higher Froude numbers mean more pronounced wave-making and higher resistance.
+          </p>
+        </InfoTooltip>
       </div>
     </div>
   );

@@ -5,6 +5,7 @@ import { Canvas, useFrame } from '@react-three/fiber';
 import { OrbitControls, Grid } from '@react-three/drei';
 import * as THREE from 'three';
 import { useHullStore } from '@/state/useHullStore';
+import { InfoTooltip } from '@/components/ui/InfoTooltip';
 
 interface HullProps {
   waveMode: boolean;
@@ -350,7 +351,21 @@ export function HullView3D() {
         />
       </Canvas>
 
-      <div className="absolute top-2 right-2">
+      <div className="absolute top-2 right-2 flex items-center gap-2">
+        <InfoTooltip title="3D Hull View">
+          <p>
+            Interactive 3D visualization of the hull geometry based on your parameter settings.
+          </p>
+          <p>
+            <strong>Gray topsides:</strong> The portion above the waterline (freeboard).
+          </p>
+          <p>
+            <strong>Red antifouling:</strong> The portion below the waterline (draft).
+          </p>
+          <p>
+            Enable <strong>Waves</strong> to see how the hull responds to sea state based on its stability characteristics. A stiffer boat (higher GM) will have a quicker roll period.
+          </p>
+        </InfoTooltip>
         <button
           onClick={() => setWaveMode(!waveMode)}
           className={`px-2 py-1 text-[10px] rounded transition-all ${

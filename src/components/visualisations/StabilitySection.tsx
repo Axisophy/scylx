@@ -5,6 +5,7 @@ import * as d3 from 'd3';
 import { useHullStore, useHeelAngle, useSetHeelAngle } from '@/state/useHullStore';
 import { Slider } from '@/components/ui/Slider';
 import { RightingCurve } from './RightingCurve';
+import { InfoTooltip } from '@/components/ui/InfoTooltip';
 
 export function StabilitySection() {
   const svgRef = useRef<SVGSVGElement>(null);
@@ -290,27 +291,49 @@ export function StabilitySection() {
   return (
     <div ref={containerRef} className="h-full flex flex-col">
       {/* View toggle */}
-      <div className="flex items-center gap-2 px-3 py-1 border-b border-muted-foreground/10">
-        <button
-          onClick={() => setShowCurve(false)}
-          className={`px-2 py-0.5 text-xs rounded transition-colors ${
-            !showCurve
-              ? 'bg-foreground text-background'
-              : 'text-muted-foreground hover:text-foreground'
-          }`}
-        >
-          Cross-section
-        </button>
-        <button
-          onClick={() => setShowCurve(true)}
-          className={`px-2 py-0.5 text-xs rounded transition-colors ${
-            showCurve
-              ? 'bg-foreground text-background'
-              : 'text-muted-foreground hover:text-foreground'
-          }`}
-        >
-          GZ Curve
-        </button>
+      <div className="flex items-center justify-between px-3 py-1 border-b border-muted-foreground/10">
+        <div className="flex items-center gap-2">
+          <button
+            onClick={() => setShowCurve(false)}
+            className={`px-2 py-0.5 text-xs rounded transition-colors ${
+              !showCurve
+                ? 'bg-foreground text-background'
+                : 'text-muted-foreground hover:text-foreground'
+            }`}
+          >
+            Cross-section
+          </button>
+          <button
+            onClick={() => setShowCurve(true)}
+            className={`px-2 py-0.5 text-xs rounded transition-colors ${
+              showCurve
+                ? 'bg-foreground text-background'
+                : 'text-muted-foreground hover:text-foreground'
+            }`}
+          >
+            GZ Curve
+          </button>
+        </div>
+        <InfoTooltip title="Stability Analysis">
+          <p>
+            <strong>Cross-section view:</strong> Shows the hull profile at maximum beam with key stability points marked.
+          </p>
+          <p>
+            <strong>G</strong> = Centre of Gravity (where the boat's weight acts downward)
+          </p>
+          <p>
+            <strong>B</strong> = Centre of Buoyancy (where water pressure acts upward)
+          </p>
+          <p>
+            <strong>M</strong> = Metacentre (the pivot point for small heel angles)
+          </p>
+          <p>
+            <strong>GM</strong> = Metacentric height. Larger GM means stiffer, more stable boat but quicker, less comfortable motion.
+          </p>
+          <p>
+            <strong>GZ Curve:</strong> Shows righting arm vs heel angle. The area under this curve indicates how much energy is needed to capsize the boat.
+          </p>
+        </InfoTooltip>
       </div>
 
       {/* Content area */}

@@ -6,6 +6,7 @@ import { useHullStore } from '@/state/useHullStore';
 import { calculatePhysics } from '@/engine/physics';
 import { PARAM_BOUNDS } from '@/types/hull';
 import type { HullParams } from '@/types/hull';
+import { InfoTooltip } from '@/components/ui/InfoTooltip';
 
 type OutputMetric = 'GM' | 'hullSpeed' | 'displacement' | 'draft';
 type NumericParamKey = 'lwl' | 'beam' | 'depth' | 'deadrise' | 'crewWeight' | 'cargoWeight' | 'ballastWeight' | 'ballastHeight' | 'engineHP';
@@ -207,6 +208,25 @@ export function SensitivityChart() {
             {metric}
           </button>
         ))}
+        <div className="ml-auto">
+          <InfoTooltip title="Sensitivity Analysis">
+            <p>
+              A <strong>tornado chart</strong> showing which parameters have the greatest impact on the selected metric.
+            </p>
+            <p>
+              Longer bars mean higher sensitivity - small changes in that parameter cause large changes in the output.
+            </p>
+            <p>
+              <strong>Green:</strong> Increasing the parameter improves the metric
+            </p>
+            <p>
+              <strong>Red:</strong> Increasing the parameter worsens the metric
+            </p>
+            <p>
+              This helps identify which parameters to focus on during design optimization.
+            </p>
+          </InfoTooltip>
+        </div>
       </div>
 
       {/* Chart */}

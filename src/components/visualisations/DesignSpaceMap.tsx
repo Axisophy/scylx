@@ -3,6 +3,7 @@
 import { useRef, useEffect, useState } from 'react';
 import * as d3 from 'd3';
 import { useHullStore, useDesignSpaceData, useSurrogateReady, useSurrogateTraining, useTrainingProgress } from '@/state/useHullStore';
+import { InfoTooltip } from '@/components/ui/InfoTooltip';
 
 type MetricType = 'gm' | 'hullSpeed' | 'draft';
 
@@ -274,7 +275,21 @@ export function DesignSpaceMap() {
             {m === 'gm' ? 'GM' : m === 'hullSpeed' ? 'Speed' : 'Draft'}
           </button>
         ))}
-        <span className="ml-auto text-xs text-muted-foreground">Click to explore</span>
+        <span className="ml-auto text-xs text-muted-foreground mr-2">Click to explore</span>
+        <InfoTooltip title="Design Space Map">
+          <p>
+            This is the <strong>neural surrogate</strong> - a small neural network trained on ~10,000 hull configurations.
+          </p>
+          <p>
+            The heatmap shows predicted performance across the entire design space. Brighter colors indicate better values for the selected metric.
+          </p>
+          <p>
+            <strong>Click anywhere</strong> on the map to instantly set the LWL and Beam parameters to that configuration. The surrogate enables exploration of configurations between the original training points.
+          </p>
+          <p>
+            The <strong>crosshair</strong> shows your current hull configuration.
+          </p>
+        </InfoTooltip>
       </div>
       <svg ref={svgRef} className="flex-1 w-full" />
     </div>
