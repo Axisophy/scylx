@@ -187,10 +187,6 @@ function Hull({ waveMode }: HullProps) {
     );
   }, [params.lwl, params.beam, params.depth, params.hullType, params.deadrise]);
 
-  // Clipping planes for waterline coloring
-  const aboveWaterClip = useMemo(() => [new THREE.Plane(new THREE.Vector3(0, -1, 0), 0)], []);
-  const belowWaterClip = useMemo(() => [new THREE.Plane(new THREE.Vector3(0, 1, 0), 0)], []);
-
   // Wave response animation based on stability
   useFrame((state) => {
     if (meshRef.current) {
@@ -221,27 +217,13 @@ function Hull({ waveMode }: HullProps) {
 
   return (
     <group ref={meshRef}>
-      {/* Hull - above waterline (topsides - gray) */}
+      {/* Hull - single color to verify shape */}
       <mesh geometry={geometry} position={[0, yOffset, 0]}>
         <meshStandardMaterial
-          color="#52525B"
-          metalness={0.1}
-          roughness={0.6}
-          side={THREE.DoubleSide}
-          clippingPlanes={aboveWaterClip}
-          clipShadows
-        />
-      </mesh>
-
-      {/* Hull - below waterline (antifouling red) */}
-      <mesh geometry={geometry} position={[0, yOffset, 0]}>
-        <meshStandardMaterial
-          color="#991B1B"
+          color="#EA580C"
           metalness={0.1}
           roughness={0.5}
           side={THREE.DoubleSide}
-          clippingPlanes={belowWaterClip}
-          clipShadows
         />
       </mesh>
 
